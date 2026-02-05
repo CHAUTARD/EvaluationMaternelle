@@ -23,6 +23,7 @@ class _EleveManagementPageState extends State<EleveManagementPage> {
 
   Future<void> _fetchData() async {
     if (!mounted) return;
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
     try {
       final isar = IsarService.isar;
       final eleves = await isar.eleves.where().findAll();
@@ -48,10 +49,10 @@ class _EleveManagementPageState extends State<EleveManagementPage> {
         setState(() {
           _isLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erreur de chargement des données: $e")),
-        );
       }
+       scaffoldMessenger.showSnackBar(
+        SnackBar(content: Text("Erreur de chargement des données: $e")),
+      );
     }
   }
 
@@ -83,7 +84,7 @@ class _EleveManagementPageState extends State<EleveManagementPage> {
                     onSaved: (value) => prenom = value!,
                   ),
                   DropdownButtonFormField<Niveau>(
-                    value: selectedNiveau,
+                    initialValue: selectedNiveau,
                     decoration: const InputDecoration(labelText: 'Niveau'),
                     items: _niveaux.map((n) {
                       return DropdownMenuItem(
@@ -112,7 +113,8 @@ class _EleveManagementPageState extends State<EleveManagementPage> {
                 child: const Text('Annuler'),
               ),
               ElevatedButton(
-                onPressed: () {
+                 onPressed: () {
+                  final navigator = Navigator.of(context);
                   if (formKey.currentState!.validate()) {
                     formKey.currentState!.save();
                     if (eleve == null) {
@@ -120,7 +122,7 @@ class _EleveManagementPageState extends State<EleveManagementPage> {
                     } else {
                       _updateEleve(eleve, prenom, selectedNiveau!);
                     }
-                    Navigator.pop(context);
+                    navigator.pop();
                   }
                 },
                 child: const Text('Enregistrer'),
@@ -133,6 +135,8 @@ class _EleveManagementPageState extends State<EleveManagementPage> {
   }
 
   Future<void> _addEleve(String prenom, Niveau niveau) async {
+    if (!mounted) return;
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
     try {
       final isar = IsarService.isar;
       final newEleve = Eleve()..prenom = prenom;
@@ -143,17 +147,19 @@ class _EleveManagementPageState extends State<EleveManagementPage> {
         await newEleve.niveau.save();
       });
 
-      _fetchData();
+      await _fetchData();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Erreur lors de l\'ajout: $e")));
+        scaffoldMessenger.showSnackBar(
+            SnackBar(content: Text("Erreur lors de l'ajout: $e")));
       }
     }
   }
 
   Future<void> _updateEleve(
       Eleve eleve, String prenom, Niveau niveau) async {
+    if (!mounted) return;
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
     try {
       final isar = IsarService.isar;
       eleve.prenom = prenom;
@@ -164,26 +170,28 @@ class _EleveManagementPageState extends State<EleveManagementPage> {
         await eleve.niveau.save();
       });
 
-      _fetchData();
+      await _fetchData();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        scaffoldMessenger.showSnackBar(
             SnackBar(content: Text("Erreur de mise à jour: $e")));
       }
     }
   }
 
   Future<void> _deleteEleve(int idEleve) async {
+    if (!mounted) return;
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
     try {
       final isar = IsarService.isar;
       await isar.writeTxn(() async {
         await isar.eleves.delete(idEleve);
       });
 
-      _fetchData();
+      await _fetchData();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        scaffoldMessenger.showSnackBar(
             SnackBar(content: Text("Erreur de suppression: $e")));
       }
     }
@@ -221,8 +229,8 @@ class _EleveManagementPageState extends State<EleveManagementPage> {
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showFormDialog(),
-        child: const Icon(Icons.add),
         tooltip: 'Ajouter un élève',
+        child: const Icon(Icons.add),
       ),
     );
   }

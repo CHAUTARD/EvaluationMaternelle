@@ -24,6 +24,8 @@ class _ListeManagementPageState extends State<ListeManagementPage> {
 
   Future<void> _fetchListes() async {
     if (!mounted) return;
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
     setState(() => _isLoading = true);
 
     try {
@@ -41,10 +43,10 @@ class _ListeManagementPageState extends State<ListeManagementPage> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erreur de chargement des listes: $e")),
-        );
       }
+      scaffoldMessenger.showSnackBar(
+        SnackBar(content: Text("Erreur de chargement des listes: $e")),
+      );
     }
   }
 
@@ -144,6 +146,9 @@ class _ListeManagementPageState extends State<ListeManagementPage> {
   }
 
   Future<void> _addListe(String nom, String image) async {
+    if (!mounted) return;
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
     try {
       final isar = IsarService.isar;
       final newListe = Liste()
@@ -154,16 +159,17 @@ class _ListeManagementPageState extends State<ListeManagementPage> {
         await isar.listes.put(newListe);
       });
 
-      _fetchListes();
+      await _fetchListes();
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Erreur lors de l\'ajout: $e")));
-      }
+      scaffoldMessenger.showSnackBar(
+          SnackBar(content: Text("Erreur lors de l'ajout: $e")));
     }
   }
 
   Future<void> _updateListe(Liste liste, String nom, String image) async {
+    if (!mounted) return;
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
     try {
       final isar = IsarService.isar;
       liste.nom = nom;
@@ -173,22 +179,23 @@ class _ListeManagementPageState extends State<ListeManagementPage> {
         await isar.listes.put(liste);
       });
 
-      _fetchListes();
+      await _fetchListes();
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Erreur de mise à jour: $e")));
-      }
+      scaffoldMessenger.showSnackBar(
+          SnackBar(content: Text("Erreur de mise à jour: $e")));
     }
   }
 
   Future<void> _deleteListe(Liste liste) async {
+    if (!mounted) return;
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
     final isar = IsarService.isar;
 
     final associatedNiveaux = await isar.niveaus.filter().listes((q) => q.idListeEqualTo(liste.idListe)).findAll();
 
     if (associatedNiveaux.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      scaffoldMessenger.showSnackBar(
         const SnackBar(content: Text('Cette liste est associée à un ou plusieurs niveaux et ne peut pas être supprimée.')),
       );
       return;
@@ -215,12 +222,10 @@ class _ListeManagementPageState extends State<ListeManagementPage> {
         await isar.listes.delete(liste.idListe);
       });
 
-      _fetchListes();
+      await _fetchListes();
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Erreur de suppression: $e")));
-      }
+      scaffoldMessenger.showSnackBar(
+          SnackBar(content: Text("Erreur de suppression: $e")));
     }
   }
 

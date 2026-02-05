@@ -37,6 +37,7 @@ class _HistoriquePageState extends State<HistoriquePage> {
 
   Future<void> _fetchData() async {
     if (!mounted) return;
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
     setState(() => _isLoading = true);
 
     try {
@@ -60,10 +61,10 @@ class _HistoriquePageState extends State<HistoriquePage> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erreur de chargement: $e")),
-        );
       }
+      scaffoldMessenger.showSnackBar(
+        SnackBar(content: Text("Erreur de chargement: $e")),
+      );
     }
   }
 
@@ -136,19 +137,20 @@ class _HistoriquePageState extends State<HistoriquePage> {
 
     if (confirm == true) {
       if (!mounted) return;
+      final scaffoldMessenger = ScaffoldMessenger.of(context);
       setState(() => _isLoading = true);
       try {
         await _isar.writeTxn(() async {
           await _isar.historiques.clear();
         });
-        _fetchData();
+        await _fetchData();
       } catch (e) {
         if (mounted) {
           setState(() => _isLoading = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Erreur de suppression: $e")),
-          );
         }
+        scaffoldMessenger.showSnackBar(
+          SnackBar(content: Text("Erreur de suppression: $e")),
+        );
       }
     }
   }
@@ -189,7 +191,7 @@ class _HistoriquePageState extends State<HistoriquePage> {
                                 leading: CircleAvatar(
                                   backgroundColor: Colors.blue.shade100,
                                   child: Text(
-                                    '${correctes}/${total}',
+                                    '$correctes/$total',
                                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                                   ),
                                 ),
@@ -270,7 +272,7 @@ class _HistoriquePageState extends State<HistoriquePage> {
         Wrap(
           spacing: 8.0,
           runSpacing: 4.0,
-          children: words.map((word) => Chip(label: Text(word), backgroundColor: color.withOpacity(0.1))).toList(),
+          children: words.map((word) => Chip(label: Text(word), backgroundColor: color.withAlpha((255 * 0.1).round()))).toList(),
         ),
         const SizedBox(height: 16),
       ],

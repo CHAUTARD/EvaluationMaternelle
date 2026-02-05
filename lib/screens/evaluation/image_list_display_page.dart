@@ -33,21 +33,23 @@ class _ImageListDisplayPageState extends State<ImageListDisplayPage> {
   }
 
   Future<void> _loadData() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
     await _isar.writeTxn(() async {
       await widget.liste.mots.load();
     });
-    
+
     final mots = widget.liste.mots.toList();
     mots.shuffle(Random());
 
     final lastTest = await _isar.historiques
-        .where()
+        .filter()
         .idEleveEqualTo(widget.eleve.idEleve)
         .idListeEqualTo(widget.liste.idListe)
         .sortByDateDesc()
         .findFirst();
 
+    if (!mounted) return;
     setState(() {
       _shuffledMots = mots;
       _lastTest = lastTest;
@@ -58,9 +60,9 @@ class _ImageListDisplayPageState extends State<ImageListDisplayPage> {
   void _recordResultAndNext(bool reussi) {
     final currentMot = _shuffledMots[_currentIndex];
     if (reussi) {
-      _motsReussis.add(currentMot.mot);
+      _motsReussis.add(currentMot.word);
     } else {
-      _motsEchoues.add(currentMot.mot);
+      _motsEchoues.add(currentMot.word);
     }
 
     if (_currentIndex < _shuffledMots.length - 1) {
@@ -85,7 +87,7 @@ class _ImageListDisplayPageState extends State<ImageListDisplayPage> {
     });
 
     if (mounted) {
-        Navigator.of(context).pop();
+      Navigator.of(context).pop();
     }
   }
 
@@ -117,25 +119,26 @@ class _ImageListDisplayPageState extends State<ImageListDisplayPage> {
                               Text('Dernière session: ${DateFormat('dd/MM/yyyy').format(_lastTest!.date)}'),
                               Text('Score: ${_lastTest!.motsReussis.length} / ${_lastTest!.motsReussis.length + _lastTest!.motsEchoues.length}')
                             ],
-                          )
-                      ),
+                          )),
                     Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          if (_shuffledMots[_currentIndex].image?.isNotEmpty ?? false)
+                          if (_shuffledMots[_currentIndex].image.isNotEmpty)
                             Expanded(
                               child: Padding(
                                 padding: const EdgeInsets.all(16.0),
-                                child: Image.network(
-                                  _shuffledMots[_currentIndex].image!,
+                                child: Image.asset(
+                                  'assets/images/${_shuffledMots[_currentIndex].image}',
                                   fit: BoxFit.contain,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      const Center(child: Text('Image non trouvée')),
                                 ),
                               ),
                             ),
                           const SizedBox(height: 20),
                           Text(
-                            _shuffledMots[_currentIndex].mot,
+                            _shuffledMots[_currentIndex].word,
                             style: Theme.of(context).textTheme.displaySmall?.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -166,13 +169,19 @@ class _ImageListDisplayPageState extends State<ImageListDisplayPage> {
           onPressed: () => _recordResultAndNext(false),
           icon: const Icon(Icons.close),
           label: const Text('Pas réussi'),
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
+          style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
         ),
         ElevatedButton.icon(
           onPressed: () => _recordResultAndNext(true),
           icon: const Icon(Icons.check),
           label: const Text('Réussi'),
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
+          style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
         ),
       ],
     );

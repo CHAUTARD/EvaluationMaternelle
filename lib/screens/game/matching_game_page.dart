@@ -1,5 +1,6 @@
+// matching_game_page.dart
+
 import 'package:flutter/material.dart';
-import 'dart:math';
 import '../../models/mot.dart';
 
 class MatchingGamePage extends StatefulWidget {
@@ -41,11 +42,11 @@ class _MatchingGamePageState extends State<MatchingGamePage> {
   }
 
   List<String> _generateOptions(Mot correctWord) {
-    List<String> allWords = widget.words.map((w) => w.mot).toList();
-    allWords.remove(correctWord.mot);
+    List<String> allWords = widget.words.map((w) => w.word).toList();
+    allWords.remove(correctWord.word);
     allWords.shuffle();
 
-    List<String> currentOptions = [correctWord.mot];
+    List<String> currentOptions = [correctWord.word];
     currentOptions.addAll(allWords.take(3));
     currentOptions.shuffle();
     
@@ -62,7 +63,7 @@ class _MatchingGamePageState extends State<MatchingGamePage> {
   }
 
   void _checkAnswer(String selectedWord) {
-    bool isCorrect = selectedWord == currentWord!.mot;
+    bool isCorrect = selectedWord == currentWord!.word;
 
     if (isCorrect) {
       setState(() {
@@ -72,7 +73,7 @@ class _MatchingGamePageState extends State<MatchingGamePage> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(isCorrect ? 'Correct!' : 'Faux! Le mot était "${currentWord!.mot}"'),
+        content: Text(isCorrect ? 'Correct!' : 'Faux! Le mot était "${currentWord!.word}"'),
         backgroundColor: isCorrect ? Colors.green : Colors.red,
         duration: const Duration(seconds: 1),
       ),

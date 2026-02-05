@@ -17,13 +17,18 @@ const MotSchema = CollectionSchema(
   name: r'Mot',
   id: -2477484458865499246,
   properties: {
-    r'image': PropertySchema(
+    r'idListe': PropertySchema(
       id: 0,
+      name: r'idListe',
+      type: IsarType.long,
+    ),
+    r'image': PropertySchema(
+      id: 1,
       name: r'image',
       type: IsarType.string,
     ),
     r'word': PropertySchema(
-      id: 1,
+      id: 2,
       name: r'word',
       type: IsarType.string,
     )
@@ -59,8 +64,9 @@ void _motSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeString(offsets[0], object.image);
-  writer.writeString(offsets[1], object.word);
+  writer.writeLong(offsets[0], object.idListe);
+  writer.writeString(offsets[1], object.image);
+  writer.writeString(offsets[2], object.word);
 }
 
 Mot _motDeserialize(
@@ -69,10 +75,12 @@ Mot _motDeserialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  final object = Mot();
+  final object = Mot(
+    idListe: reader.readLong(offsets[0]),
+    image: reader.readString(offsets[1]),
+    word: reader.readString(offsets[2]),
+  );
   object.idMot = id;
-  object.image = reader.readString(offsets[0]);
-  object.word = reader.readString(offsets[1]);
   return object;
 }
 
@@ -84,8 +92,10 @@ P _motDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readString(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 1:
+      return (reader.readString(offset)) as P;
+    case 2:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -180,6 +190,58 @@ extension MotQueryWhere on QueryBuilder<Mot, Mot, QWhereClause> {
 }
 
 extension MotQueryFilter on QueryBuilder<Mot, Mot, QFilterCondition> {
+  QueryBuilder<Mot, Mot, QAfterFilterCondition> idListeEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'idListe',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Mot, Mot, QAfterFilterCondition> idListeGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'idListe',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Mot, Mot, QAfterFilterCondition> idListeLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'idListe',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Mot, Mot, QAfterFilterCondition> idListeBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'idListe',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<Mot, Mot, QAfterFilterCondition> idMotEqualTo(Id value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -494,6 +556,18 @@ extension MotQueryObject on QueryBuilder<Mot, Mot, QFilterCondition> {}
 extension MotQueryLinks on QueryBuilder<Mot, Mot, QFilterCondition> {}
 
 extension MotQuerySortBy on QueryBuilder<Mot, Mot, QSortBy> {
+  QueryBuilder<Mot, Mot, QAfterSortBy> sortByIdListe() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'idListe', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Mot, Mot, QAfterSortBy> sortByIdListeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'idListe', Sort.desc);
+    });
+  }
+
   QueryBuilder<Mot, Mot, QAfterSortBy> sortByImage() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'image', Sort.asc);
@@ -520,6 +594,18 @@ extension MotQuerySortBy on QueryBuilder<Mot, Mot, QSortBy> {
 }
 
 extension MotQuerySortThenBy on QueryBuilder<Mot, Mot, QSortThenBy> {
+  QueryBuilder<Mot, Mot, QAfterSortBy> thenByIdListe() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'idListe', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Mot, Mot, QAfterSortBy> thenByIdListeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'idListe', Sort.desc);
+    });
+  }
+
   QueryBuilder<Mot, Mot, QAfterSortBy> thenByIdMot() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'idMot', Sort.asc);
@@ -558,6 +644,12 @@ extension MotQuerySortThenBy on QueryBuilder<Mot, Mot, QSortThenBy> {
 }
 
 extension MotQueryWhereDistinct on QueryBuilder<Mot, Mot, QDistinct> {
+  QueryBuilder<Mot, Mot, QDistinct> distinctByIdListe() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'idListe');
+    });
+  }
+
   QueryBuilder<Mot, Mot, QDistinct> distinctByImage(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -577,6 +669,12 @@ extension MotQueryProperty on QueryBuilder<Mot, Mot, QQueryProperty> {
   QueryBuilder<Mot, int, QQueryOperations> idMotProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'idMot');
+    });
+  }
+
+  QueryBuilder<Mot, int, QQueryOperations> idListeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'idListe');
     });
   }
 

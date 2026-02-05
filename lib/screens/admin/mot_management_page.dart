@@ -1,5 +1,5 @@
+// mot_management_page.dart
 import 'package:flutter/material.dart';
-import 'package:isar/isar.dart';
 import 'package:myapp/models/models.dart';
 import 'package:myapp/services/isar_service.dart';
 import './image_picker_screen.dart'; // Import for image selection
@@ -36,7 +36,7 @@ class _MotManagementPageState extends State<MotManagementPage> {
 
   void _showFormDialog({Mot? mot}) {
     final formKey = GlobalKey<FormState>();
-    String motText = mot?.mot ?? '';
+    String motText = mot?.word ?? '';
     String imageName = mot?.image ?? '';
 
     showDialog(
@@ -63,8 +63,8 @@ class _MotManagementPageState extends State<MotManagementPage> {
                     const SizedBox(height: 10),
                     InkWell(
                       onTap: () async {
-                        final selectedImage = await Navigator.push<String>(
-                          context,
+                        final navigator = Navigator.of(context);
+                        final selectedImage = await navigator.push<String>(
                           MaterialPageRoute(
                               builder: (context) => const ImagePickerScreen()),
                         );
@@ -107,8 +107,11 @@ class _MotManagementPageState extends State<MotManagementPage> {
               onPressed: () {
                 if (formKey.currentState!.validate()) {
                   formKey.currentState!.save();
+                  final scaffoldMessenger = ScaffoldMessenger.of(context);
+                  final navigator = Navigator.of(context);
+
                   if (imageName.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    scaffoldMessenger.showSnackBar(
                       const SnackBar(content: Text('Veuillez sélectionner une image.')),
                     );
                     return;
@@ -118,7 +121,7 @@ class _MotManagementPageState extends State<MotManagementPage> {
                   } else {
                     _updateMot(mot, motText, imageName);
                   }
-                  Navigator.pop(context);
+                  navigator.pop();
                 }
               },
               child: const Text('Enregistrer'),
@@ -131,26 +134,32 @@ class _MotManagementPageState extends State<MotManagementPage> {
 
   Future<void> _addMot(String motText, String imageName) async {
     final isar = IsarService.isar;
-    final newMot = Mot()
-      ..mot = motText
-      ..image = imageName;
+    final newMot = Mot(
+      idListe: widget.liste.idListe,
+      word: motText,
+      image: imageName,
+    );
 
     await isar.writeTxn(() async {
       await isar.mots.put(newMot);
       widget.liste.mots.add(newMot);
       await widget.liste.mots.save();
     });
-    setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Future<void> _updateMot(Mot mot, String motText, String imageName) async {
     final isar = IsarService.isar;
-    mot.mot = motText;
+    mot.word = motText;
     mot.image = imageName;
     await isar.writeTxn(() async {
       await isar.mots.put(mot);
     });
-    setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Future<void> _deleteMot(Mot mot) async {
@@ -160,7 +169,9 @@ class _MotManagementPageState extends State<MotManagementPage> {
       await widget.liste.mots.save();
       await isar.mots.delete(mot.idMot);
     });
-    setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -186,7 +197,7 @@ class _MotManagementPageState extends State<MotManagementPage> {
                         leading: CircleAvatar(
                           backgroundImage: AssetImage('assets/images/${mot.image}'),
                         ),
-                        title: Text(mot.mot),
+                        title: Text(mot.word),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [

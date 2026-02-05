@@ -1,9 +1,9 @@
+// eleve_detail_page.dart
 import 'package:flutter/material.dart';
 import 'package:myapp/models/models.dart';
 import 'package:myapp/services/isar_service.dart';
 import 'evaluation/word_display_page.dart';
 import 'evaluation/image_list_display_page.dart';
-import 'package:isar/isar.dart';
 
 class EleveDetailPage extends StatefulWidget {
   final Eleve eleve;
