@@ -1,14 +1,21 @@
-import 'package:isar/isar.dart';
+import 'package:hive/hive.dart';
 
 part 'historique.g.dart';
 
-@collection
-class Historique {
-  Id idHistorique = Isar.autoIncrement;
+@HiveType(typeId: 2)
+class Historique extends HiveObject {
+  @HiveField(0)
+  late int eleveId;
 
-  late int idEleve;
-  late int idListe;
+  @HiveField(1)
+  late int listeId;
+
+  @HiveField(2)
   late List<String> motsReussis;
+
+  @HiveField(3)
   late List<String> motsEchoues;
+
+  @HiveField(4)
   late DateTime date;
 }

@@ -6,13 +6,13 @@ import '../../models/mot.dart';
 class MatchingGamePage extends StatefulWidget {
   final List<Mot> words;
 
-  const MatchingGamePage({Key? key, required this.words}) : super(key: key);
+  const MatchingGamePage({super.key, required this.words});
 
   @override
-  _MatchingGamePageState createState() => _MatchingGamePageState();
+  MatchingGamePageState createState() => MatchingGamePageState();
 }
 
-class _MatchingGamePageState extends State<MatchingGamePage> {
+class MatchingGamePageState extends State<MatchingGamePage> {
   Mot? currentWord;
   List<String> options = [];
   int score = 0;
@@ -49,13 +49,13 @@ class _MatchingGamePageState extends State<MatchingGamePage> {
     List<String> currentOptions = [correctWord.word];
     currentOptions.addAll(allWords.take(3));
     currentOptions.shuffle();
-    
+
     // Ensure we have 4 unique options if possible
     while (currentOptions.length < 4 && allWords.isNotEmpty) {
-        final nextWord = allWords.removeAt(0);
-        if (!currentOptions.contains(nextWord)) {
-            currentOptions.add(nextWord);
-        }
+      final nextWord = allWords.removeAt(0);
+      if (!currentOptions.contains(nextWord)) {
+        currentOptions.add(nextWord);
+      }
     }
     currentOptions.shuffle();
 
@@ -73,7 +73,9 @@ class _MatchingGamePageState extends State<MatchingGamePage> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(isCorrect ? 'Correct!' : 'Faux! Le mot était "${currentWord!.word}"'),
+        content: Text(
+          isCorrect ? 'Correct!' : 'Faux! Le mot était "${currentWord!.word}"',
+        ),
         backgroundColor: isCorrect ? Colors.green : Colors.red,
         duration: const Duration(seconds: 1),
       ),
@@ -129,31 +131,43 @@ class _MatchingGamePageState extends State<MatchingGamePage> {
 
     Widget imageWidget;
     if (currentWord!.image.startsWith('http')) {
-        imageWidget = Image.network(
-            currentWord!.image,
-            height: 150,
-            errorBuilder: (context, error, stackTrace) => Icon(Icons.broken_image, size: 100, color: Colors.grey),
-            loadingBuilder: (context, child, progress) => progress == null ? child : Center(child: CircularProgressIndicator()),
-        );
+      imageWidget = Image.network(
+        currentWord!.image,
+        height: 150,
+        errorBuilder: (context, error, stackTrace) =>
+            Icon(Icons.broken_image, size: 100, color: Colors.grey),
+        loadingBuilder: (context, child, progress) => progress == null
+            ? child
+            : Center(child: CircularProgressIndicator()),
+      );
     } else if (currentWord!.image.isNotEmpty) {
-        imageWidget = Image.asset(
-            currentWord!.image,
-            height: 150,
-            errorBuilder: (context, error, stackTrace) => Icon(Icons.broken_image, size: 100, color: Colors.grey),
-        );
+      imageWidget = Image.asset(
+        'assets/images/${currentWord!.image}',
+        height: 150,
+        errorBuilder: (context, error, stackTrace) =>
+            Icon(Icons.broken_image, size: 100, color: Colors.grey),
+      );
     } else {
-        imageWidget = Icon(Icons.image_not_supported, size: 100, color: Colors.grey);
+      imageWidget = Icon(
+        Icons.image_not_supported,
+        size: 100,
+        color: Colors.grey,
+      );
     }
-
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Question ${questionsAsked}/$totalQuestions'),
+        title: Text('Question $questionsAsked/$totalQuestions'),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 20.0),
-            child: Center(child: Text('Score: $score', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
-          )
+            child: Center(
+              child: Text(
+                'Score: $score',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
         ],
       ),
       body: Center(
@@ -164,11 +178,13 @@ class _MatchingGamePageState extends State<MatchingGamePage> {
             children: [
               Text(
                 'Quel est ce mot?',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: 25),
-              
+
               Container(
                 height: 160,
                 width: 160,
@@ -177,7 +193,7 @@ class _MatchingGamePageState extends State<MatchingGamePage> {
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.grey.withOpacity(0.3),
+                      color: Colors.grey.withAlpha(77),
                       spreadRadius: 2,
                       blurRadius: 8,
                       offset: Offset(0, 4),
@@ -186,7 +202,7 @@ class _MatchingGamePageState extends State<MatchingGamePage> {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: imageWidget
+                  child: imageWidget,
                 ),
               ),
 
@@ -197,16 +213,16 @@ class _MatchingGamePageState extends State<MatchingGamePage> {
                   padding: const EdgeInsets.symmetric(vertical: 8.0),
                   child: ElevatedButton(
                     onPressed: () => _checkAnswer(word),
-                    child: Text(word, style: TextStyle(fontSize: 18)),
                     style: ElevatedButton.styleFrom(
                       minimumSize: Size(double.infinity, 55),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
+                    child: Text(word, style: TextStyle(fontSize: 18)),
                   ),
                 );
-              }).toList(),
+              }),
             ],
           ),
         ),

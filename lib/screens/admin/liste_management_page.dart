@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:isar/isar.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:myapp/models/models.dart';
-import 'package:myapp/services/isar_service.dart';
+import 'package:myapp/services/hive_service.dart';
 import './image_picker_screen.dart';
 import './mot_management_page.dart';
 
@@ -13,40 +13,30 @@ class ListeManagementPage extends StatefulWidget {
 }
 
 class _ListeManagementPageState extends State<ListeManagementPage> {
-  List<Liste> _listes = [];
+  late Box<Liste> _listesBox;
+  late Box<Niveau> _niveauxBox;
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _fetchListes();
+    _openBoxes();
   }
 
-  Future<void> _fetchListes() async {
+  Future<void> _openBoxes() async {
     if (!mounted) return;
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-
-    setState(() => _isLoading = true);
-
     try {
-      final isar = IsarService.isar;
-      final listes = await isar.listes.where().findAll();
-
-      listes.sort((a, b) => a.nom.compareTo(b.nom));
-
-      if (mounted) {
-        setState(() {
-          _listes = listes;
-          _isLoading = false;
-        });
-      }
+      _listesBox = HiveService.listes;
+      _niveauxBox = HiveService.niveaux;
+      setState(() {
+        _isLoading = false;
+      });
     } catch (e) {
       if (mounted) {
-        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Erreur de chargement des données: $e")),
+        );
       }
-      scaffoldMessenger.showSnackBar(
-        SnackBar(content: Text("Erreur de chargement des listes: $e")),
-      );
     }
   }
 
@@ -147,42 +137,31 @@ class _ListeManagementPageState extends State<ListeManagementPage> {
 
   Future<void> _addListe(String nom, String image) async {
     if (!mounted) return;
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-
     try {
-      final isar = IsarService.isar;
       final newListe = Liste()
         ..nom = nom
-        ..image = image;
-
-      await isar.writeTxn(() async {
-        await isar.listes.put(newListe);
-      });
-
-      await _fetchListes();
+        ..image = image
+        ..motsIds = [];
+      await _listesBox.add(newListe);
     } catch (e) {
-      scaffoldMessenger.showSnackBar(
-          SnackBar(content: Text("Erreur lors de l'ajout: $e")));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Erreur lors de l'ajout: $e")));
+      }
     }
   }
 
   Future<void> _updateListe(Liste liste, String nom, String image) async {
     if (!mounted) return;
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-
     try {
-      final isar = IsarService.isar;
       liste.nom = nom;
       liste.image = image;
-
-      await isar.writeTxn(() async {
-        await isar.listes.put(liste);
-      });
-
-      await _fetchListes();
+      await liste.save();
     } catch (e) {
-      scaffoldMessenger.showSnackBar(
-          SnackBar(content: Text("Erreur de mise à jour: $e")));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Erreur de mise à jour: $e")));
+      }
     }
   }
 
@@ -190,9 +169,9 @@ class _ListeManagementPageState extends State<ListeManagementPage> {
     if (!mounted) return;
     final scaffoldMessenger = ScaffoldMessenger.of(context);
 
-    final isar = IsarService.isar;
-
-    final associatedNiveaux = await isar.niveaus.filter().listes((q) => q.idListeEqualTo(liste.idListe)).findAll();
+    final associatedNiveaux = _niveauxBox.values
+        .where((n) => n.listesIds.contains(liste.key))
+        .toList();
 
     if (associatedNiveaux.isNotEmpty) {
       scaffoldMessenger.showSnackBar(
@@ -216,13 +195,8 @@ class _ListeManagementPageState extends State<ListeManagementPage> {
     if (confirm != true) return;
 
     try {
-      await isar.writeTxn(() async {
-        await liste.mots.load();
-        await isar.mots.deleteAll(liste.mots.map((m) => m.idMot).toList());
-        await isar.listes.delete(liste.idListe);
-      });
-
-      await _fetchListes();
+      await HiveService.mots.deleteAll(liste.motsIds);
+      await liste.delete();
     } catch (e) {
       scaffoldMessenger.showSnackBar(
           SnackBar(content: Text("Erreur de suppression: $e")));
@@ -235,7 +209,7 @@ class _ListeManagementPageState extends State<ListeManagementPage> {
       MaterialPageRoute(
         builder: (context) => MotManagementPage(liste: liste),
       ),
-    ).then((_) => _fetchListes());
+    );
   }
 
   @override
@@ -244,39 +218,45 @@ class _ListeManagementPageState extends State<ListeManagementPage> {
       appBar: AppBar(title: const Text('Gestion des Listes')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              itemCount: _listes.length,
-              itemBuilder: (context, index) {
-                final liste = _listes[index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundImage: AssetImage('assets/images/${liste.image}'),
-                    ),
-                    title: Text(liste.nom),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit_note, color: Colors.purple),
-                          tooltip: 'Gérer le contenu',
-                          onPressed: () => _navigateToMotManagement(liste),
+          : ValueListenableBuilder(
+              valueListenable: _listesBox.listenable(),
+              builder: (context, Box<Liste> box, _) {
+                final listes = box.values.toList()..sort((a, b) => a.nom.compareTo(b.nom));
+                return ListView.builder(
+                  itemCount: listes.length,
+                  itemBuilder: (context, index) {
+                    final liste = listes[index];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundImage: AssetImage('assets/images/${liste.image}'),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.edit, color: Colors.blueAccent),
-                          tooltip: 'Modifier la liste',
-                          onPressed: () => _showFormDialog(liste: liste),
+                        title: Text(liste.nom),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit_note, color: Colors.purple),
+                              tooltip: 'Gérer le contenu',
+                              onPressed: () => _navigateToMotManagement(liste),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.edit, color: Colors.blueAccent),
+                              tooltip: 'Modifier la liste',
+                              onPressed: () => _showFormDialog(liste: liste),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline,
+                                  color: Colors.redAccent),
+                              tooltip: 'Supprimer la liste',
+                              onPressed: () => _deleteListe(liste),
+                            ),
+                          ],
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.delete_outline,
-                              color: Colors.redAccent),
-                          tooltip: 'Supprimer la liste',
-                          onPressed: () => _deleteListe(liste),
-                        ),
-                      ],
-                    ),
-                  ),
+                      ),
+                    );
+                  },
                 );
               },
             ),

@@ -1,5 +1,14 @@
+
+// result_page.dart
 import 'package:flutter/material.dart';
-import 'package:myapp/models/models.dart';
+import 'package:myapp/models/mot.dart';
+
+class WordEvaluation {
+  final Mot mot;
+  final bool isCorrect;
+
+  WordEvaluation({required this.mot, required this.isCorrect});
+}
 
 class ResultPage extends StatelessWidget {
   final int score;
@@ -39,7 +48,7 @@ class ResultPage extends StatelessWidget {
                     leading: CircleAvatar(
                       backgroundImage: AssetImage('assets/images/${eval.mot.image}'),
                     ),
-                    title: Text(eval.mot.mot),
+                    title: Text(eval.mot.word),
                     trailing: Icon(
                       eval.isCorrect ? Icons.check_circle : Icons.cancel,
                       color: eval.isCorrect ? Colors.green : Colors.red,

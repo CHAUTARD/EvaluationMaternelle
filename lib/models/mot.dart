@@ -1,13 +1,15 @@
-import 'package:isar/isar.dart';
+import 'package:hive/hive.dart';
 
 part 'mot.g.dart';
 
-@collection
-class Mot {
-  Id idMot = Isar.autoIncrement;
+@HiveType(typeId: 4)
+class Mot extends HiveObject {
+  @HiveField(0)
   late int idListe;
-  late String word;
-  late String image;
 
-  Mot({required this.idListe, required this.word, required this.image});
+  @HiveField(1)
+  late String word;
+
+  @HiveField(2)
+  late String image;
 }

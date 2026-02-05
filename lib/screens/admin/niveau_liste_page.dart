@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:isar/isar.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:myapp/models/models.dart';
-import 'package:myapp/services/isar_service.dart';
+import 'package:myapp/services/hive_service.dart';
 
 class NiveauListePage extends StatefulWidget {
   final Niveau niveau;
@@ -13,49 +13,21 @@ class NiveauListePage extends StatefulWidget {
 }
 
 class _NiveauListePageState extends State<NiveauListePage> {
-  List<Liste> _allListes = [];
-  bool _isLoading = true;
+  late Box<Liste> _listesBox;
 
   @override
   void initState() {
     super.initState();
-    _fetchData();
-  }
-
-  Future<void> _fetchData() async {
-    if (!mounted) return;
-    setState(() => _isLoading = true);
-
-    try {
-      final isar = IsarService.isar;
-      await isar.writeTxn(() async {
-        _allListes = await isar.listes.where().sortByNom().findAll();
-        await widget.niveau.listes.load();
-      });
-
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erreur de chargement: $e")),
-        );
-      }
-    }
+    _listesBox = HiveService.listes;
   }
 
   Future<void> _onCheckboxChanged(Liste liste, bool isChecked) async {
-    final isar = IsarService.isar;
-    await isar.writeTxn(() async {
-      if (isChecked) {
-        widget.niveau.listes.add(liste);
-      } else {
-        widget.niveau.listes.removeWhere((element) => element.idListe == liste.idListe);
-      }
-      await widget.niveau.listes.save();
-    });
+    if (isChecked) {
+      widget.niveau.listesIds.add(liste.key);
+    } else {
+      widget.niveau.listesIds.remove(liste.key);
+    }
+    await widget.niveau.save();
     setState(() {});
   }
 
@@ -65,28 +37,32 @@ class _NiveauListePageState extends State<NiveauListePage> {
       appBar: AppBar(
         title: Text('Listes pour ${widget.niveau.nom}'),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              itemCount: _allListes.length,
-              itemBuilder: (context, index) {
-                final liste = _allListes[index];
-                final isAssociated = widget.niveau.listes.any((l) => l.idListe == liste.idListe);
+      body: ValueListenableBuilder(
+        valueListenable: _listesBox.listenable(),
+        builder: (context, Box<Liste> box, _) {
+          final allListes = box.values.toList()..sort((a,b) => a.nom.compareTo(b.nom));
+          return ListView.builder(
+            itemCount: allListes.length,
+            itemBuilder: (context, index) {
+              final liste = allListes[index];
+              final isAssociated = widget.niveau.listesIds.contains(liste.key);
 
-                return CheckboxListTile(
-                  title: Text(liste.nom),
-                  value: isAssociated,
-                  onChanged: (bool? value) {
-                    if (value != null) {
-                      _onCheckboxChanged(liste, value);
-                    }
-                  },
-                  secondary: CircleAvatar(
-                    backgroundImage: AssetImage('assets/images/${liste.image}'),
-                  ),
-                );
-              },
-            ),
+              return CheckboxListTile(
+                title: Text(liste.nom),
+                value: isAssociated,
+                onChanged: (bool? value) {
+                  if (value != null) {
+                    _onCheckboxChanged(liste, value);
+                  }
+                },
+                secondary: CircleAvatar(
+                  backgroundImage: AssetImage('assets/images/${liste.image}'),
+                ),
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }

@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../main.dart'; // Import ThemeProvider
-import '../../models/models.dart';
+import '../../services/hive_service.dart'; // Import HiveService
 import '../admin/eleve_management_page.dart';
 import '../admin/historique_page.dart';
 import '../admin/liste_management_page.dart';
@@ -16,24 +16,16 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
 
-    // Dummy data for the game
-    final List<Mot> dummyWords = [
-      Mot()..mot = 'Lion'..image = 'https://picsum.photos/200',
-      Mot()..mot = 'Chat'..image = 'https://picsum.photos/201',
-      Mot()..mot = 'Chien'..image = 'https://picsum.photos/202',
-      Mot()..mot = 'Tigre'..image = 'https://picsum.photos/203',
-      Mot()..mot = 'Loup'..image = 'https://picsum.photos/204',
-      Mot()..mot = 'Zèbre'..image = 'https://picsum.photos/205',
-    ];
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('App d\'apprentissage'),
         actions: [
           IconButton(
-            icon: Icon(themeProvider.themeMode == ThemeMode.dark
-                ? Icons.light_mode
-                : Icons.dark_mode),
+            icon: Icon(
+              themeProvider.themeMode == ThemeMode.dark
+                  ? Icons.light_mode
+                  : Icons.dark_mode,
+            ),
             onPressed: () => themeProvider.toggleTheme(),
             tooltip: 'Changer le thème',
           ),
@@ -58,7 +50,9 @@ class HomePage extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const EleveManagementPage()),
+                  MaterialPageRoute(
+                    builder: (context) => const EleveManagementPage(),
+                  ),
                 );
               },
             ),
@@ -69,7 +63,9 @@ class HomePage extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const NiveauManagementPage()),
+                  MaterialPageRoute(
+                    builder: (context) => const NiveauManagementPage(),
+                  ),
                 );
               },
             ),
@@ -80,7 +76,9 @@ class HomePage extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const ListeManagementPage()),
+                  MaterialPageRoute(
+                    builder: (context) => const ListeManagementPage(),
+                  ),
                 );
               },
             ),
@@ -91,7 +89,9 @@ class HomePage extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const HistoriquePage()),
+                  MaterialPageRoute(
+                    builder: (context) => const HistoriquePage(),
+                  ),
                 );
               },
             ),
@@ -101,10 +101,25 @@ class HomePage extends StatelessWidget {
               label: 'Jeu de correspondance',
               color: Theme.of(context).colorScheme.secondary,
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => MatchingGamePage(words: dummyWords)),
-                );
+                final words = HiveService.mots.values.toList();
+                if (context.mounted) {
+                  if (words.length < 4) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Il faut au moins 4 mots pour démarrer le jeu.',
+                        ),
+                      ),
+                    );
+                  } else {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => MatchingGamePage(words: words),
+                      ),
+                    );
+                  }
+                }
               },
             ),
           ],
@@ -113,7 +128,8 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildDashboardItem(BuildContext context, {
+  Widget _buildDashboardItem(
+    BuildContext context, {
     required IconData icon,
     required String label,
     required VoidCallback onTap,
@@ -124,7 +140,7 @@ class HomePage extends StatelessWidget {
 
     return Card(
       elevation: 4,
-      shadowColor: colorScheme.shadow.withOpacity(0.4),
+      shadowColor: colorScheme.shadow.withAlpha(102),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: onTap,

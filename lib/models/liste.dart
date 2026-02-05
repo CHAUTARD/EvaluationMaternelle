@@ -1,18 +1,18 @@
-// liste.dart
-import 'package:isar/isar.dart';
-import './mot.dart';
-import './niveau.dart';
+import 'package:hive/hive.dart';
 
 part 'liste.g.dart';
 
-@collection
-class Liste {
-  Id idListe = Isar.autoIncrement;
+@HiveType(typeId: 3)
+class Liste extends HiveObject {
+  @HiveField(0)
   late String nom;
+
+  @HiveField(1)
   late String image;
 
-  final mots = IsarLinks<Mot>();
+  @HiveField(2)
+  late List<int> motsIds;
 
-  @Backlink(to: 'listes')
-  final niveaux = IsarLinks<Niveau>();
+  @HiveField(3)
+  late int niveauId;
 }

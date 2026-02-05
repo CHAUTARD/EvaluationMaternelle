@@ -1,10 +1,7 @@
-// lib/screens/image_list_display_page.dart
-// Affiche une grille d'images et de mots pour une activité donnée.
-
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:myapp/services/hive_service.dart';
 import '../models/models.dart';
 
 class ImageListDisplayPage extends StatefulWidget {
@@ -27,21 +24,17 @@ class _ImageListDisplayPageState extends State<ImageListDisplayPage> {
 
   // Récupère les mots et les images associés à la liste.
   Future<List<Mot>> _fetchMots() async {
-    final querySnapshot = await FirebaseFirestore.instance
-        .collection('mots')
-        .where('idListe', isEqualTo: int.tryParse(widget.liste.id) ?? -1)
-        .get();
-
-    final mots = querySnapshot.docs.map((doc) => Mot.fromFirestore(doc)).toList();
+    final motBox = HiveService.mots;
+    final mots = motBox.values.where((mot) => mot.idListe == widget.liste.key).toList();
 
     // Pour chaque mot, récupérer l'URL de l'image depuis Firebase Storage.
     for (final mot in mots) {
-      if (mot.image != null && mot.image!.isNotEmpty) {
+      if (mot.image.isNotEmpty) {
         try {
           final url = await FirebaseStorage.instance.ref('images/${mot.image}').getDownloadURL();
-          mot.imageUrl = url; // Stocker l'URL dans le modèle
+          mot.image = url; // Stocker l'URL dans le modèle pour l'affichage
         } catch (e) {
-          mot.imageUrl = ''; // Gérer les erreurs (ex: image non trouvée)
+          mot.image = ''; // Gérer les erreurs (ex: image non trouvée)
         }
       }
     }
@@ -86,9 +79,9 @@ class _ImageListDisplayPageState extends State<ImageListDisplayPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Expanded(
-                      child: (mot.imageUrl != null && mot.imageUrl!.isNotEmpty)
+                      child: (mot.image.isNotEmpty)
                           ? CachedNetworkImage(
-                              imageUrl: mot.imageUrl!,
+                              imageUrl: mot.image,
                               fit: BoxFit.cover,
                               placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
                               errorWidget: (context, url, error) => const Icon(Icons.broken_image, size: 50),
@@ -98,7 +91,7 @@ class _ImageListDisplayPageState extends State<ImageListDisplayPage> {
                     Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Text(
-                        mot.mot,
+                        mot.word,
                         textAlign: TextAlign.center,
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                       ),

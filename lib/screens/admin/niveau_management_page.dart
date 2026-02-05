@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:isar/isar.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:myapp/models/models.dart';
-import 'package:myapp/services/isar_service.dart';
+import 'package:myapp/services/hive_service.dart';
 import './niveau_liste_page.dart';
 
 class NiveauManagementPage extends StatefulWidget {
@@ -12,34 +12,28 @@ class NiveauManagementPage extends StatefulWidget {
 }
 
 class _NiveauManagementPageState extends State<NiveauManagementPage> {
-  List<Niveau> _niveaux = [];
+  late Box<Niveau> _niveauxBox;
+  late Box<Eleve> _elevesBox;
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _fetchNiveaux();
+    _openBoxes();
   }
 
-  Future<void> _fetchNiveaux() async {
+  Future<void> _openBoxes() async {
     if (!mounted) return;
     try {
-      final isar = IsarService.isar;
-      final niveaux = await isar.niveaus.where().sortByOrdre().findAll();
-
-      if (mounted) {
-        setState(() {
-          _niveaux = niveaux;
-          _isLoading = false;
-        });
-      }
+      _niveauxBox = HiveService.niveaux;
+      _elevesBox = HiveService.eleves;
+      setState(() {
+        _isLoading = false;
+      });
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erreur de chargement des niveaux: $e")),
+          SnackBar(content: Text("Erreur de chargement des données: $e")),
         );
       }
     }
@@ -59,7 +53,9 @@ class _NiveauManagementPageState extends State<NiveauManagementPage> {
     String nom = niveau?.nom ?? '';
     String couleur = niveau?.couleur ?? '#4285F4';
     int ordre = niveau?.ordre ??
-        (_niveaux.isEmpty ? 1 : _niveaux.map((n) => n.ordre).reduce((a, b) => a > b ? a : b) + 1);
+        (_niveauxBox.isEmpty
+            ? 1
+            : _niveauxBox.values.map((n) => n.ordre).reduce((a, b) => a > b ? a : b) + 1);
 
     showDialog(
       context: context,
@@ -159,17 +155,12 @@ class _NiveauManagementPageState extends State<NiveauManagementPage> {
 
   Future<void> _addNiveau(String nom, String couleur, int ordre) async {
     try {
-      final isar = IsarService.isar;
       final newNiveau = Niveau()
         ..nom = nom
         ..couleur = couleur
-        ..ordre = ordre;
-
-      await isar.writeTxn(() async {
-        await isar.niveaus.put(newNiveau);
-      });
-
-      _fetchNiveaux();
+        ..ordre = ordre
+        ..listesIds = [];
+      await _niveauxBox.add(newNiveau);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -180,16 +171,10 @@ class _NiveauManagementPageState extends State<NiveauManagementPage> {
 
   Future<void> _updateNiveau(Niveau niveau, String nom, String couleur, int ordre) async {
     try {
-      final isar = IsarService.isar;
       niveau.nom = nom;
       niveau.couleur = couleur;
       niveau.ordre = ordre;
-
-      await isar.writeTxn(() async {
-        await isar.niveaus.put(niveau);
-      });
-
-      _fetchNiveaux();
+      await niveau.save();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -199,10 +184,7 @@ class _NiveauManagementPageState extends State<NiveauManagementPage> {
   }
 
     Future<void> _deleteNiveau(Niveau niveau) async {
-    final isar = IsarService.isar;
-
-    // Check for associated students
-    final associatedEleves = await isar.eleves.filter().niveau((q) => q.idNiveauEqualTo(niveau.idNiveau)).count();
+    final associatedEleves = _elevesBox.values.where((e) => e.niveauId == niveau.key).length;
 
     if (associatedEleves > 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -211,7 +193,6 @@ class _NiveauManagementPageState extends State<NiveauManagementPage> {
       return;
     }
 
-    // Confirmation dialog
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -227,11 +208,7 @@ class _NiveauManagementPageState extends State<NiveauManagementPage> {
     if (confirm != true) return;
 
     try {
-      await isar.writeTxn(() async {
-        await isar.niveaus.delete(niveau.idNiveau);
-      });
-
-      _fetchNiveaux();
+      await niveau.delete();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -255,59 +232,58 @@ class _NiveauManagementPageState extends State<NiveauManagementPage> {
       appBar: AppBar(title: const Text('Gestion des Niveaux')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : ReorderableListView.builder(
-              itemCount: _niveaux.length,
-              itemBuilder: (context, index) {
-                final niveau = _niveaux[index];
-                return ListTile(
-                  key: ValueKey(niveau.idNiveau),
-                  tileColor: index.isEven ? Colors.grey[100] : Colors.white,
-                  title: Text(niveau.nom),
-                  subtitle: Text('Ordre: ${niveau.ordre}'),
-                  leading: CircleAvatar(
-                    backgroundColor: _getColorFromHex(niveau.couleur),
-                    child: Text((index + 1).toString(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),),
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.list_alt, color: Colors.purple),
-                        tooltip: 'Gérer les listes associées',
-                        onPressed: () => _navigateToNiveauListe(niveau),
+          : ValueListenableBuilder(
+              valueListenable: _niveauxBox.listenable(),
+              builder: (context, Box<Niveau> box, _) {
+                final niveaux = box.values.toList()..sort((a, b) => a.ordre.compareTo(b.ordre));
+                return ReorderableListView.builder(
+                  itemCount: niveaux.length,
+                  itemBuilder: (context, index) {
+                    final niveau = niveaux[index];
+                    return ListTile(
+                      key: ValueKey(niveau.key),
+                      tileColor: index.isEven ? Colors.grey[100] : Colors.white,
+                      title: Text(niveau.nom),
+                      subtitle: Text('Ordre: ${niveau.ordre}'),
+                      leading: CircleAvatar(
+                        backgroundColor: _getColorFromHex(niveau.couleur),
+                        child: Text((index + 1).toString(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.edit, color: Colors.blueAccent),
-                        onPressed: () => _showFormDialog(niveau: niveau),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.list_alt, color: Colors.purple),
+                            tooltip: 'Gérer les listes associées',
+                            onPressed: () => _navigateToNiveauListe(niveau),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.edit, color: Colors.blueAccent),
+                            onPressed: () => _showFormDialog(niveau: niveau),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                            onPressed: () => _deleteNiveau(niveau),
+                          ),
+                        ],
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                        onPressed: () => _deleteNiveau(niveau),
-                      ),
-                    ],
-                  ),
+                    );
+                  },
+                  onReorder: (oldIndex, newIndex) async {
+                    if (newIndex > oldIndex) {
+                      newIndex -= 1;
+                    }
+                    final item = niveaux.removeAt(oldIndex);
+                    niveaux.insert(newIndex, item);
+
+                    for (int i = 0; i < niveaux.length; i++) {
+                      niveaux[i].ordre = i + 1;
+                      await niveaux[i].save();
+                    }
+                  },
                 );
               },
-              onReorder: (oldIndex, newIndex) async {
-                setState(() {
-                  if (newIndex > oldIndex) {
-                    newIndex -= 1;
-                  }
-                  final item = _niveaux.removeAt(oldIndex);
-                  _niveaux.insert(newIndex, item);
-                });
-
-                final isar = IsarService.isar;
-                await isar.writeTxn(() async {
-                  for (int i = 0; i < _niveaux.length; i++) {
-                    _niveaux[i].ordre = i + 1;
-                    await isar.niveaus.put(_niveaux[i]);
-                  }
-                });
-
-                _fetchNiveaux();
-              },
-      ),
+            ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showFormDialog(),
         tooltip: 'Ajouter un niveau',

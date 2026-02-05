@@ -2,13 +2,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:myapp/services/isar_service.dart';
+import 'package:myapp/services/hive_service.dart';
 import 'package:myapp/screens/home/home_page.dart';
 import 'package:myapp/services/data_initializer.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await IsarService.initialize();
+  await HiveService.initialize();
   await DataInitializer.initializeData();
   runApp(
     ChangeNotifierProvider(
@@ -39,7 +39,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const MaterialColor primarySeedColor = Colors.blue;
+    const MaterialColor primarySeedColor = Colors.teal;
 
     final TextTheme appTextTheme = TextTheme(
       displayLarge: GoogleFonts.poppins(fontSize: 57, fontWeight: FontWeight.bold),

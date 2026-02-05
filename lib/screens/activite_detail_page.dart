@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:isar/isar.dart';
+import 'package:hive/hive.dart';
 import 'package:myapp/models/models.dart';
-import 'package:myapp/services/isar_service.dart';
 
 class ActiviteDetailPage extends StatefulWidget {
   final Liste liste; // L'activité (ou liste) à afficher
@@ -21,10 +20,12 @@ class _ActiviteDetailPageState extends State<ActiviteDetailPage> {
     _motsFuture = _fetchMotsForListe();
   }
 
-  // Récupère les mots associés à la liste actuelle depuis la base de données Isar.
+  // Récupère les mots associés à la liste actuelle depuis la base de données Hive.
   Future<List<Mot>> _fetchMotsForListe() async {
-    final isar = IsarService.isar;
-    return await isar.mots.filter().idListeEqualTo(widget.liste.idListe).findAll();
+    final motBox = Hive.box<Mot>('mots');
+    // On utilise la `key` de la liste pour filtrer les mots correspondants.
+    final mots = motBox.values.where((mot) => mot.idListe == widget.liste.key).toList();
+    return mots;
   }
 
   @override
@@ -43,7 +44,7 @@ class _ActiviteDetailPageState extends State<ActiviteDetailPage> {
             return Center(child: Text('Erreur: ${snapshot.error}'));
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('Aucun élément trouvé.'));
+            return const Center(child: Text('Aucun mot trouvé pour cette liste.'));
           }
 
           final mots = snapshot.data!;

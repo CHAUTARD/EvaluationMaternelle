@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:isar/isar.dart';
+import 'package:hive/hive.dart';
 import 'dart:math';
 import '../../models/models.dart';
-import '../../services/isar_service.dart';
+import '../../services/hive_service.dart';
 import 'package:intl/intl.dart';
+import '../game/result_page.dart'; // Import ResultPage
 
 class WordDisplayPage extends StatefulWidget {
   final Liste liste;
@@ -16,13 +17,14 @@ class WordDisplayPage extends StatefulWidget {
 }
 
 class _WordDisplayPageState extends State<WordDisplayPage> {
-  final Isar _isar = IsarService.isar;
+  final Box<Mot> _motsBox = HiveService.mots;
+  final Box<Historique> _historiqueBox = HiveService.historique; // Correction ici
+
   List<Mot> _shuffledMots = [];
   int _currentIndex = 0;
   bool _isLoading = true;
-  
-  final List<String> _motsReussis = [];
-  final List<String> _motsEchoues = [];
+
+  final List<WordEvaluation> _evaluations = []; // Use WordEvaluation list
 
   Historique? _lastTest;
 
@@ -33,59 +35,67 @@ class _WordDisplayPageState extends State<WordDisplayPage> {
   }
 
   Future<void> _loadData() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
-    await _isar.writeTxn(() async {
-      await widget.liste.mots.load();
-    });
-    
-    final mots = widget.liste.mots.toList();
+
+    // 1. Charger les mots de la liste
+    final mots = _motsBox.values
+        .where((mot) => widget.liste.motsIds.contains(mot.key))
+        .toList();
     mots.shuffle(Random());
 
-    final lastTest = await _isar.historiques
-        .where()
-        .idEleveEqualTo(widget.eleve.idEleve)
-        .idListeEqualTo(widget.liste.idListe)
-        .sortByDateDesc()
-        .findFirst();
+    // 2. Trouver le dernier historique pour cet élève et cette liste
+    final lastTest = _historiqueBox.values
+        .where((h) =>
+            h.eleveId == widget.eleve.key && h.listeId == widget.liste.key)
+        .toList()
+      ..sort((a, b) => b.date.compareTo(a.date));
 
+    if (!mounted) return;
     setState(() {
       _shuffledMots = mots;
-      _lastTest = lastTest;
+      _lastTest = lastTest.isNotEmpty ? lastTest.first : null;
       _isLoading = false;
     });
   }
 
   void _recordResultAndNext(bool reussi) {
     final currentMot = _shuffledMots[_currentIndex];
-    if (reussi) {
-      _motsReussis.add(currentMot.mot);
-    } else {
-      _motsEchoues.add(currentMot.mot);
-    }
+    _evaluations.add(WordEvaluation(mot: currentMot, isCorrect: reussi));
 
     if (_currentIndex < _shuffledMots.length - 1) {
       setState(() {
         _currentIndex++;
       });
     } else {
-      _saveResultsAndExit();
+      _saveResultsAndNavigate();
     }
   }
 
-  Future<void> _saveResultsAndExit() async {
-    final newHistorique = Historique()
-      ..idEleve = widget.eleve.idEleve
-      ..idListe = widget.liste.idListe
-      ..date = DateTime.now()
-      ..motsReussis = _motsReussis
-      ..motsEchoues = _motsEchoues;
+  Future<void> _saveResultsAndNavigate() async {
+    final motsReussis = _evaluations.where((e) => e.isCorrect).map((e) => e.mot.word).toList();
+    final motsEchoues = _evaluations.where((e) => !e.isCorrect).map((e) => e.mot.word).toList();
 
-    await _isar.writeTxn(() async {
-      await _isar.historiques.put(newHistorique);
-    });
+    final newHistorique = Historique()
+      ..date = DateTime.now()
+      ..motsReussis = motsReussis
+      ..motsEchoues = motsEchoues
+      ..eleveId = widget.eleve.key
+      ..listeId = widget.liste.key;
+
+    await _historiqueBox.add(newHistorique);
 
     if (mounted) {
-        Navigator.of(context).pop();
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ResultPage(
+            score: motsReussis.length,
+            total: _evaluations.length,
+            evaluations: _evaluations,
+          ),
+        ),
+      );
     }
   }
 
@@ -111,27 +121,31 @@ class _WordDisplayPageState extends State<WordDisplayPage> {
                     ),
                     if (_lastTest != null)
                       Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
-                        child: Column(
-                           children: [
-                             Text('Dernière session: ${DateFormat('dd/MM/yyyy').format(_lastTest!.date)}'),
-                             Text('Score: ${_lastTest!.motsReussis.length} / ${_lastTest!.motsReussis.length + _lastTest!.motsEchoues.length}')
-                           ],
-                        )
-                      ),
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: Column(
+                            children: [
+                              Text('Dernière session: ${DateFormat('dd/MM/yyyy').format(_lastTest!.date)}'),
+                              Text('Score: ${_lastTest!.motsReussis.length} / ${_lastTest!.motsReussis.length + _lastTest!.motsEchoues.length}')
+                            ],
+                          )),
                     Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          if (_shuffledMots[_currentIndex].image?.isNotEmpty ?? false)
-                            Image.network(
-                              _shuffledMots[_currentIndex].image!,
-                              height: 150,
-                              fit: BoxFit.contain,
-                            ),
+                          if (_shuffledMots[_currentIndex].image.isNotEmpty)
+                             Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Image.asset(
+                                  'assets/images/${_shuffledMots[_currentIndex].image}',
+                                  height: 150,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      const Center(child: Text('Image non trouvée')),
+                                ),
+                              ),
                           const SizedBox(height: 20),
                           Text(
-                            _shuffledMots[_currentIndex].mot,
+                            _shuffledMots[_currentIndex].word,
                             style: Theme.of(context).textTheme.displayLarge?.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -162,13 +176,19 @@ class _WordDisplayPageState extends State<WordDisplayPage> {
           onPressed: () => _recordResultAndNext(false),
           icon: const Icon(Icons.close),
           label: const Text('Pas réussi'),
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
+          style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
         ),
         ElevatedButton.icon(
           onPressed: () => _recordResultAndNext(true),
           icon: const Icon(Icons.check),
           label: const Text('Réussi'),
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
+          style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
         ),
       ],
     );
