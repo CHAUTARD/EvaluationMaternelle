@@ -1,4 +1,4 @@
-// lib/screens/home/home_page.dart
+// lib/home_page.dart
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:myapp/models/eleve.dart';
@@ -6,7 +6,6 @@ import 'package:myapp/models/niveau.dart';
 import 'package:myapp/screens/eleve_detail_page.dart';
 import 'package:myapp/screens/settings/settings_page.dart';
 import 'package:myapp/services/hive_service.dart';
-import 'package:myapp/widgets/debug_page_identifier.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -101,14 +100,20 @@ class _HomePageState extends State<HomePage>
                   return Tab(
                     child: Row(
                       children: [
-                        Icon(Icons.circle, color: niveau.color, size: 12),
+                        Icon(
+                          Icons.circle,
+                          color: Color(niveau.couleur),
+                          size: 12,
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           niveau.nom,
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: niveau.color, // Use the level's color for the text
+                            color: Color(
+                              niveau.couleur,
+                            ), // Use the level's color for the text
                           ),
                         ),
                       ],
@@ -117,62 +122,57 @@ class _HomePageState extends State<HomePage>
                 }).toList(),
               ),
       ),
-      body: Stack(
-        children: [
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _niveaux.isEmpty
-                  ? const Center(
-                      child: Text(
-                        'Aucun niveau trouvé.\nAjoutez des niveaux et des élèves dans les paramètres.',
-                        textAlign: TextAlign.center,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _niveaux.isEmpty
+          ? const Center(
+              child: Text(
+                'Aucun niveau trouvé.\nAjoutez des niveaux et des élèves dans les paramètres.',
+                textAlign: TextAlign.center,
+              ),
+            )
+          : TabBarView(
+              controller: _tabController,
+              children: _niveaux.map((niveau) {
+                final eleves = _elevesByNiveau[niveau.id] ?? [];
+                if (eleves.isEmpty) {
+                  return const Center(
+                    child: Text('Aucun élève dans ce niveau.'),
+                  );
+                }
+                return ListView.builder(
+                  itemCount: eleves.length,
+                  itemBuilder: (context, index) {
+                    final eleve = eleves[index];
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: Color(niveau.couleur),
+                        child: Text(
+                          eleve.nom.substring(0, 1).toUpperCase(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-                    )
-                  : TabBarView(
-                      controller: _tabController,
-                      children: _niveaux.map((niveau) {
-                        final eleves = _elevesByNiveau[niveau.id] ?? [];
-                        if (eleves.isEmpty) {
-                          return const Center(
-                            child: Text('Aucun élève dans ce niveau.'),
-                          );
-                        }
-                        return ListView.builder(
-                          itemCount: eleves.length,
-                          itemBuilder: (context, index) {
-                            final eleve = eleves[index];
-                            return ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: niveau.color,
-                                child: Text(
-                                  eleve.nom.substring(0, 1).toUpperCase(),
-                                  style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                              title: Text(
-                                '${eleve.nom} (${niveau.nom})',
-                                style: const TextStyle(fontSize: 20),
-                              ),
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        EleveDetailPage(eleve: eleve),
-                                  ),
-                                );
-                              },
-                            );
-                          },
+                      title: Text(
+                        eleve.nom,
+                        style: const TextStyle(fontSize: 20),
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => EleveDetailPage(eleve: eleve),
+                          ),
                         );
-                      }).toList(),
-                    ),
-          const DebugPageIdentifier(pageName: 'HomePage'),
-        ],
-      ),
+                      },
+                    );
+                  },
+                );
+              }).toList(),
+            ),
     );
   }
 }

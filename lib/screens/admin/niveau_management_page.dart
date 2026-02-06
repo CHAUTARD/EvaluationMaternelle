@@ -4,7 +4,6 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:myapp/models/models.dart';
 import 'package:myapp/services/hive_service.dart';
-import 'package:myapp/widgets/debug_page_identifier.dart';
 import 'package:uuid/uuid.dart';
 import './niveau_liste_page.dart';
 
@@ -235,7 +234,6 @@ class _NiveauManagementPageState extends State<NiveauManagementPage> {
               );
             },
           ),
-          const DebugPageIdentifier(pageName: 'NiveauManagementPage'),
         ],
       ),
       floatingActionButton: FloatingActionButton(

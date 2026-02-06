@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:myapp/routes/app_routes.dart';
-import 'package:myapp/widgets/debug_page_identifier.dart';
+import 'package:myapp/screens/eleve/resultat_page.dart';
 
 class EleveDashboardPage extends StatelessWidget {
   const EleveDashboardPage({super.key});
@@ -8,28 +7,20 @@ class EleveDashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Eleve Dashboard'),
-      ),
-      body: Stack(
-        children: [
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  onPressed: () => Navigator.pushNamed(context, AppRoutes.jeu),
-                  child: const Text('Jeu'),
-                ),
-                ElevatedButton(
-                  onPressed: () => Navigator.pushNamed(context, AppRoutes.resultat),
-                  child: const Text('Resultat'),
-                ),
-              ],
+      appBar: AppBar(title: const Text('Eleve Dashboard')),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ResultatPage()),
+              ),
+              child: const Text('Resultat'),
             ),
-          ),
-          DebugPageIdentifier(pageName: 'EleveDashboardPage'),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:myapp/models/models.dart';
-import 'package:myapp/widgets/debug_page_identifier.dart';
 
 class ActiviteDetailPage extends StatefulWidget {
   final Liste liste; // L'activité (ou liste) à afficher
@@ -25,16 +24,16 @@ class _ActiviteDetailPageState extends State<ActiviteDetailPage> {
   Future<List<Mot>> _fetchMotsForListe() async {
     final motBox = Hive.box<Mot>('mots');
     // On utilise la `key` de la liste pour filtrer les mots correspondants.
-    final mots = motBox.values.where((mot) => mot.idListe == widget.liste.key).toList();
+    final mots = motBox.values
+        .where((mot) => mot.idListe == widget.liste.key)
+        .toList();
     return mots;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.liste.nom),
-      ),
+      appBar: AppBar(title: Text(widget.liste.nom)),
       body: Stack(
         children: [
           FutureBuilder<List<Mot>>(
@@ -47,7 +46,9 @@ class _ActiviteDetailPageState extends State<ActiviteDetailPage> {
                 return Center(child: Text('Erreur: ${snapshot.error}'));
               }
               if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return const Center(child: Text('Aucun mot trouvé pour cette liste.'));
+                return const Center(
+                  child: Text('Aucun mot trouvé pour cette liste.'),
+                );
               }
 
               final mots = snapshot.data!;
@@ -79,20 +80,25 @@ class _ActiviteDetailPageState extends State<ActiviteDetailPage> {
                                   fit: BoxFit.cover,
                                   errorBuilder: (context, error, stackTrace) =>
                                       const Center(
-                                        child: Icon(Icons.error, color: Colors.red),
+                                        child: Icon(
+                                          Icons.error,
+                                          color: Colors.red,
+                                        ),
                                       ),
                                 )
                               : const Center(
-                                  child: Icon(Icons.image_not_supported, size: 50),
+                                  child: Icon(
+                                    Icons.image_not_supported,
+                                    size: 50,
+                                  ),
                                 ),
                         ),
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 12.0),
                           child: Text(
                             item.word,
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -103,7 +109,6 @@ class _ActiviteDetailPageState extends State<ActiviteDetailPage> {
               );
             },
           ),
-          const DebugPageIdentifier(pageName: 'ActiviteDetailPage'),
         ],
       ),
     );

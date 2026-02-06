@@ -1,4 +1,3 @@
-
 // result_page.dart
 import 'package:flutter/material.dart';
 import 'package:myapp/models/mot.dart';
@@ -15,7 +14,8 @@ class ResultPage extends StatelessWidget {
   final int total;
   final List<WordEvaluation> evaluations;
 
-  const ResultPage({super.key, 
+  const ResultPage({
+    super.key,
     required this.score,
     required this.total,
     required this.evaluations,
@@ -43,14 +43,19 @@ class ResultPage extends StatelessWidget {
               itemBuilder: (context, index) {
                 final eval = evaluations[index];
                 return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundImage: AssetImage('assets/images/${eval.mot.image}'),
+                      backgroundImage: AssetImage(
+                        'assets/images/${eval.mot.image}',
+                      ),
                     ),
                     title: Text(eval.mot.word),
                     trailing: Icon(
-                      eval.isCorrect ? Icons.check_circle : Icons.cancel,
+                      eval.isCorrect ? Icons.thumb_up : Icons.thumb_down,
                       color: eval.isCorrect ? Colors.green : Colors.red,
                     ),
                   ),
@@ -61,8 +66,9 @@ class ResultPage extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: ElevatedButton(
-              onPressed: () => Navigator.of(context)
-                  .popUntil((route) => route.isFirst), // Go back to home
+              onPressed: () => Navigator.of(
+                context,
+              ).popUntil((route) => route.isFirst), // Go back to home
               child: const Text('Terminer'),
             ),
           ),

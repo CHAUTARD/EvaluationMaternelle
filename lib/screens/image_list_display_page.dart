@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:myapp/services/hive_service.dart';
-import 'package:myapp/widgets/debug_page_identifier.dart';
 import '../models/models.dart';
 
 class ImageListDisplayPage extends StatefulWidget {
@@ -15,31 +12,22 @@ class ImageListDisplayPage extends StatefulWidget {
 }
 
 class _ImageListDisplayPageState extends State<ImageListDisplayPage> {
-  late Future<List<Mot>> _motsFuture;
+  late List<Mot> _mots;
 
   @override
   void initState() {
     super.initState();
-    _motsFuture = _fetchMots();
+    // Charger les mots de manière synchrone depuis Hive.
+    _fetchMots();
   }
 
-  // Récupère les mots et les images associés à la liste.
-  Future<List<Mot>> _fetchMots() async {
+  // Récupère les mots associés à la liste directement depuis Hive.
+  void _fetchMots() {
     final motBox = HiveService.mots;
-    final mots = motBox.values.where((mot) => mot.idListe == widget.liste.key).toList();
-
-    // Pour chaque mot, récupérer l'URL de l'image depuis Firebase Storage.
-    for (final mot in mots) {
-      if (mot.image.isNotEmpty) {
-        try {
-          final url = await FirebaseStorage.instance.ref('images/${mot.image}').getDownloadURL();
-          mot.image = url; // Stocker l'URL dans le modèle pour l'affichage
-        } catch (e) {
-          mot.image = ''; // Gérer les erreurs (ex: image non trouvée)
-        }
-      }
-    }
-    return mots;
+    // Pas besoin d'attendre, c'est une opération synchrone.
+    _mots = motBox.values
+        .where((mot) => mot.idListe == widget.liste.key)
+        .toList();
   }
 
   @override
@@ -48,65 +36,65 @@ class _ImageListDisplayPageState extends State<ImageListDisplayPage> {
       appBar: AppBar(title: Text(widget.liste.nom)),
       body: Stack(
         children: [
-          FutureBuilder<List<Mot>>(
-            future: _motsFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (snapshot.hasError) {
-                return Center(child: Text("Erreur: ${snapshot.error}"));
-              }
-              if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return const Center(child: Text("Aucun mot ou image à afficher."));
-              }
-
-              final mots = snapshot.data!;
-
-              return GridView.builder(
-                padding: const EdgeInsets.all(8.0),
-                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: 200, // Largeur maximale de chaque tuile
-                  childAspectRatio: 3 / 3.5, // Ratio pour l'apparence des tuiles
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                ),
-                itemCount: mots.length,
-                itemBuilder: (context, index) {
-                  final mot = mots[index];
-                  return Card(
-                    elevation: 4,
-                    clipBehavior: Clip.antiAlias,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Expanded(
-                          child: (mot.image.isNotEmpty)
-                              ? CachedNetworkImage(
-                                  imageUrl: mot.image,
-                                  fit: BoxFit.cover,
-                                  placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
-                                  errorWidget: (context, url, error) => const Icon(Icons.broken_image, size: 50),
-                                )
-                              : const Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text(
-                            mot.word,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          if (_mots.isEmpty)
+            const Center(child: Text("Aucun mot ou image à afficher."))
+          else
+            GridView.builder(
+              padding: const EdgeInsets.all(8.0),
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 200, // Largeur maximale de chaque tuile
+                childAspectRatio: 3 / 3.5, // Ratio pour l'apparence des tuiles
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+              ),
+              itemCount: _mots.length,
+              itemBuilder: (context, index) {
+                final mot = _mots[index];
+                return Card(
+                  elevation: 4,
+                  clipBehavior: Clip.antiAlias,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: (mot.image.isNotEmpty)
+                            ? Image.asset(
+                                'assets/images/${mot.image}', // Charger depuis les assets locaux
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  // Widget à afficher si l'asset n'est pas trouvé
+                                  return const Icon(
+                                    Icons.broken_image,
+                                    size: 50,
+                                    color: Colors.grey,
+                                  );
+                                },
+                              )
+                            : const Icon(
+                                Icons.image_not_supported,
+                                size: 50,
+                                color: Colors.grey,
+                              ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          mot.word,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
                           ),
                         ),
-                      ],
-                    ),
-                  );
-                },
-              );
-            },
-          ),
-          const DebugPageIdentifier(pageName: 'ImageListDisplayPage'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
         ],
       ),
     );

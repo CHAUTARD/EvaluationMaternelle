@@ -1,9 +1,7 @@
-
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:myapp/screens/admin/take_photo_screen.dart';
-import 'package:myapp/widgets/debug_page_identifier.dart';
 
 class ImagePickerScreen extends StatefulWidget {
   const ImagePickerScreen({super.key});
@@ -50,11 +48,9 @@ class _ImagePickerScreenState extends State<ImagePickerScreen> {
   // Correctly handles BuildContext across async gap.
   Future<void> _navigateAndPickImage() async {
     // Navigator.push is async.
-    final result = await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const TakePhotoScreen(),
-      ),
-    );
+    final result = await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => const TakePhotoScreen()));
 
     // After the await, check if the widget is still mounted.
     if (!mounted) return;
@@ -68,51 +64,47 @@ class _ImagePickerScreenState extends State<ImagePickerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Sélectionner une image'),
-      ),
+      appBar: AppBar(title: const Text('Sélectionner une image')),
       body: Stack(
         children: [
           _isLoading
               ? const Center(child: CircularProgressIndicator())
               : _imagePaths.isEmpty
-                  ? const Center(child: Text("Aucune image trouvée dans assets/images."))
-                  : GridView.builder(
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        crossAxisSpacing: 4,
-                        mainAxisSpacing: 4,
-                      ),
-                      itemCount: _imagePaths.length,
-                      itemBuilder: (context, index) {
-                        final imagePath = _imagePaths[index];
-                        final imageName = imagePath.split('/').last;
-                        return GestureDetector(
-                          onTap: () {
-                            // This is synchronous, so it's safe.
-                            Navigator.pop(context, imagePath);
-                          },
-                          child: Card(
-                            clipBehavior: Clip.antiAlias,
-                            child: GridTile(
-                              footer: GridTileBar(
-                                backgroundColor: Colors.black45,
-                                title: Text(
-                                  imageName,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(fontSize: 10),
-                                ),
-                              ),
-                              child: Image.asset(
-                                imagePath,
-                                fit: BoxFit.cover,
-                              ),
+              ? const Center(
+                  child: Text("Aucune image trouvée dans assets/images."),
+                )
+              : GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 4,
+                    mainAxisSpacing: 4,
+                  ),
+                  itemCount: _imagePaths.length,
+                  itemBuilder: (context, index) {
+                    final imagePath = _imagePaths[index];
+                    final imageName = imagePath.split('/').last;
+                    return GestureDetector(
+                      onTap: () {
+                        // This is synchronous, so it's safe.
+                        Navigator.pop(context, imagePath);
+                      },
+                      child: Card(
+                        clipBehavior: Clip.antiAlias,
+                        child: GridTile(
+                          footer: GridTileBar(
+                            backgroundColor: Colors.black45,
+                            title: Text(
+                              imageName,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(fontSize: 10),
                             ),
                           ),
-                        );
-                      },
-                    ),
-          const DebugPageIdentifier(pageName: 'ImagePickerScreen'),
+                          child: Image.asset(imagePath, fit: BoxFit.cover),
+                        ),
+                      ),
+                    );
+                  },
+                ),
         ],
       ),
       floatingActionButton: FloatingActionButton(

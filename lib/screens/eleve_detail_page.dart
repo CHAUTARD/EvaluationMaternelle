@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/models/models.dart';
 import 'package:myapp/services/hive_service.dart';
-import 'package:myapp/widgets/debug_page_identifier.dart';
 import 'evaluation/word_display_page.dart';
 import 'evaluation/image_list_display_page.dart';
 
@@ -18,6 +17,7 @@ class EleveDetailPage extends StatefulWidget {
 class _EleveDetailPageState extends State<EleveDetailPage> {
   List<Liste> _activites = [];
   bool _isLoading = true;
+  Niveau? _niveau;
 
   @override
   void initState() {
@@ -31,7 +31,9 @@ class _EleveDetailPageState extends State<EleveDetailPage> {
     final niveauxBox = HiveService.niveaux;
 
     // Find the niveau that corresponds to the eleve's niveauId
-    final niveau = niveauxBox.values.firstWhere((n) => n.id == widget.eleve.niveauId);
+    final niveau = niveauxBox.values.firstWhere(
+      (n) => n.id == widget.eleve.niveauId,
+    );
 
     // Récupérer toutes les listes et les filtrer par niveauId
     final activites = listesBox.values
@@ -42,72 +44,89 @@ class _EleveDetailPageState extends State<EleveDetailPage> {
       setState(() {
         _activites = activites;
         _isLoading = false;
+        _niveau = niveau;
       });
     }
+  }
+
+  String _getNiveauName() {
+    if (_niveau != null) {
+      return _niveau!.nom;
+    }
+    return '';
+  }
+
+  String _getImagePath(String? imageName) {
+    if (imageName == null || imageName.isEmpty) {
+      return 'assets/images/default.png';
+    }
+    if (imageName.startsWith('assets/')) {
+      return imageName;
+    }
+    return 'assets/images/$imageName';
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.eleve.nom),
-        // Vous pouvez ajouter une CircleAvatar ici si vous le souhaitez
-        // leading: CircleAvatar(backgroundImage: AssetImage('assets/images/${widget.eleve.avatar}')),
-      ),
+      appBar: AppBar(title: Text('${widget.eleve.nom} {${_getNiveauName()}}')),
       body: Stack(
         children: [
           _isLoading
               ? const Center(child: CircularProgressIndicator())
               : _activites.isEmpty
-                  ? const Center(
-                      child: Text('Aucune activité trouvée pour ce niveau.'),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(8.0),
-                      itemCount: _activites.length,
-                      itemBuilder: (context, index) {
-                        final activite = _activites[index];
-                        // On vérifie si la liste de mots est vide pour déterminer le type d'activité.
-                        final isImageList = (activite.motsIds).isEmpty;
+              ? const Center(
+                  child: Text('Aucune activité trouvée pour ce niveau.'),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(8.0),
+                  itemCount: _activites.length,
+                  itemBuilder: (context, index) {
+                    final activite = _activites[index];
+                    // On vérifie si la liste de mots est vide pour déterminer le type d'activité.
+                    final isImageList = (activite.motsIds).isEmpty;
 
-                        return Card(
-                          margin: const EdgeInsets.symmetric(vertical: 6.0),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              // Assurez-vous que le chemin est correct.
-                              backgroundImage:
-                                  AssetImage('assets/images/${activite.image}'),
-                            ),
-                            title: Text(activite.nom, style: const TextStyle(fontWeight: FontWeight.bold)),
-                            trailing: const Icon(Icons.arrow_forward_ios, size: 18),
-                            onTap: () {
-                              if (isImageList) {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ImageListDisplayPage(
-                                      liste: activite,
-                                      eleve: widget.eleve,
-                                    ),
-                                  ),
-                                );
-                              } else {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => WordDisplayPage(
-                                      liste: activite,
-                                      eleve: widget.eleve,
-                                    ),
-                                  ),
-                                );
-                              }
-                            },
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 6.0),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          // Assurez-vous que le chemin est correct.
+                          backgroundImage: AssetImage(
+                            _getImagePath(activite.image),
                           ),
-                        );
-                      },
-                    ),
-          const DebugPageIdentifier(pageName: 'EleveDetailPage'),
+                        ),
+                        title: Text(
+                          activite.nom,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        trailing: const Icon(Icons.arrow_forward_ios, size: 18),
+                        onTap: () {
+                          if (isImageList) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ImageListDisplayPage(
+                                  liste: activite,
+                                  eleve: widget.eleve,
+                                ),
+                              ),
+                            );
+                          } else {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => WordDisplayPage(
+                                  liste: activite,
+                                  eleve: widget.eleve,
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    );
+                  },
+                ),
         ],
       ),
     );

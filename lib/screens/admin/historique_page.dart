@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:myapp/widgets/debug_page_identifier.dart';
 import '../../models/models.dart';
 import '../../services/hive_service.dart';
 
@@ -49,7 +48,6 @@ class _HistoriquePageState extends State<HistoriquePage> {
               Expanded(child: _buildHistoriqueList()),
             ],
           ),
-          const DebugPageIdentifier(pageName: 'HistoriquePage'),
         ],
       ),
     );

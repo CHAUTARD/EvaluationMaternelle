@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:myapp/models/models.dart';
 import 'package:myapp/services/hive_service.dart';
-import 'package:myapp/widgets/debug_page_identifier.dart';
 import './image_picker_screen.dart';
 import './mot_management_page.dart';
 
@@ -262,7 +261,8 @@ class _ListeManagementPageState extends State<ListeManagementPage> {
                                     color: Colors.purple,
                                   ),
                                   tooltip: 'Gérer le contenu',
-                                  onPressed: () => _navigateToMotManagement(liste),
+                                  onPressed: () =>
+                                      _navigateToMotManagement(liste),
                                 ),
                                 IconButton(
                                   icon: const Icon(
@@ -270,7 +270,8 @@ class _ListeManagementPageState extends State<ListeManagementPage> {
                                     color: Colors.blueAccent,
                                   ),
                                   tooltip: 'Modifier la liste',
-                                  onPressed: () => _showFormDialog(liste: liste),
+                                  onPressed: () =>
+                                      _showFormDialog(liste: liste),
                                 ),
                                 IconButton(
                                   icon: const Icon(
@@ -288,7 +289,6 @@ class _ListeManagementPageState extends State<ListeManagementPage> {
                     );
                   },
                 ),
-          const DebugPageIdentifier(pageName: 'ListeManagementPage'),
         ],
       ),
       floatingActionButton: FloatingActionButton(

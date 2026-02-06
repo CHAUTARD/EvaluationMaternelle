@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:myapp/models/models.dart';
 import 'package:myapp/services/hive_service.dart';
-import 'package:myapp/widgets/debug_page_identifier.dart';
 
 class NiveauListePage extends StatefulWidget {
   final Niveau niveau;
@@ -35,15 +34,14 @@ class _NiveauListePageState extends State<NiveauListePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Listes pour ${widget.niveau.nom}'),
-      ),
+      appBar: AppBar(title: Text('Listes pour ${widget.niveau.nom}')),
       body: Stack(
         children: [
           ValueListenableBuilder(
             valueListenable: _listesBox.listenable(),
             builder: (context, Box<Liste> box, _) {
-              final allListes = box.values.toList()..sort((a,b) => a.nom.compareTo(b.nom));
+              final allListes = box.values.toList()
+                ..sort((a, b) => a.nom.compareTo(b.nom));
               return ListView.builder(
                 itemCount: allListes.length,
                 itemBuilder: (context, index) {
@@ -59,14 +57,15 @@ class _NiveauListePageState extends State<NiveauListePage> {
                       }
                     },
                     secondary: CircleAvatar(
-                      backgroundImage: AssetImage('assets/images/${liste.image}'),
+                      backgroundImage: AssetImage(
+                        'assets/images/${liste.image}',
+                      ),
                     ),
                   );
                 },
               );
             },
           ),
-          const DebugPageIdentifier(pageName: 'NiveauListePage'),
         ],
       ),
     );

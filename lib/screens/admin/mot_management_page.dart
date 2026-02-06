@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:myapp/models/models.dart';
 import 'package:myapp/services/hive_service.dart';
-import 'package:myapp/widgets/debug_page_identifier.dart';
 import './image_picker_screen.dart'; // Import for image selection
 
 class MotManagementPage extends StatefulWidget {
@@ -186,7 +185,10 @@ class _MotManagementPageState extends State<MotManagementPage> {
                 itemBuilder: (context, index) {
                   final mot = mots[index];
                   return Card(
-                    margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     child: ListTile(
                       leading: CircleAvatar(
                         backgroundImage: _buildImageProvider(mot.image),
@@ -196,7 +198,10 @@ class _MotManagementPageState extends State<MotManagementPage> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.edit, color: Colors.blueAccent),
+                            icon: const Icon(
+                              Icons.edit,
+                              color: Colors.blueAccent,
+                            ),
                             onPressed: () => _showFormDialog(mot: mot),
                           ),
                           IconButton(
@@ -214,7 +219,6 @@ class _MotManagementPageState extends State<MotManagementPage> {
               );
             },
           ),
-          const DebugPageIdentifier(pageName: 'MotManagementPage'),
         ],
       ),
       floatingActionButton: FloatingActionButton(

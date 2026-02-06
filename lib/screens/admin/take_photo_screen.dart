@@ -50,15 +50,14 @@ class _TakePhotoScreenState extends State<TakePhotoScreen> {
       if (!mounted) return;
 
       Navigator.of(context).pop(savedImagePath);
-
     } catch (e) {
       if (kDebugMode) {
         print('Error taking photo: $e');
       }
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
