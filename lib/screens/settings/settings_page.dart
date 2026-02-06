@@ -2,7 +2,10 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/providers/theme_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:myapp/screens/admin/admin_page.dart';
+import 'package:myapp/screens/admin/eleve_management_page.dart';
+import 'package:myapp/screens/admin/niveau_management_page.dart';
+import 'package:myapp/screens/admin/liste_management_page.dart';
+import 'package:myapp/screens/admin/historique_page.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -38,19 +41,78 @@ class SettingsPage extends StatelessWidget {
             ),
           ),
           const Divider(),
-          ListTile(
-            leading: const Icon(Icons.admin_panel_settings),
-            title: const Text('Admin Dashboard'),
-            subtitle: const Text('Gérer les élèves, niveaux, et listes.'),
+          const ListTile(
+            title: Text(
+              'Administration',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            subtitle: Text("Gestion du contenu de l'application"),
+          ),
+          _buildAdminMenuItem(
+            context,
+            icon: Icons.people_alt_rounded,
+            title: 'Gérer les Élèves',
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const AdminPage()),
+                MaterialPageRoute(
+                    builder: (context) => const EleveManagementPage()),
+              );
+            },
+          ),
+          _buildAdminMenuItem(
+            context,
+            icon: Icons.layers_rounded,
+            title: 'Gérer les Niveaux',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const NiveauManagementPage()),
+              );
+            },
+          ),
+          _buildAdminMenuItem(
+            context,
+            icon: Icons.list_alt_rounded,
+            title: 'Gérer les Listes',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const ListeManagementPage()),
+              );
+            },
+          ),
+          _buildAdminMenuItem(
+            context,
+            icon: Icons.history_edu_rounded,
+            title: "Consulter l'Historique",
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const HistoriquePage()),
               );
             },
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildAdminMenuItem(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(title),
+      onTap: onTap,
     );
   }
 }

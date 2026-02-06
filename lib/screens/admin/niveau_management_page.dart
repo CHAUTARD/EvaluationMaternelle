@@ -1,11 +1,10 @@
-// niveau_management_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:myapp/models/models.dart';
 import 'package:myapp/services/hive_service.dart';
 import 'package:uuid/uuid.dart';
-import './niveau_liste_page.dart';
+import 'package:myapp/screens/admin/niveau_liste_page.dart';
 
 class NiveauManagementPage extends StatefulWidget {
   const NiveauManagementPage({super.key});
@@ -24,9 +23,7 @@ class _NiveauManagementPageState extends State<NiveauManagementPage> {
     int ordre = niveau?.ordre ?? (HiveService.niveaux.length + 1);
 
     void onColorChanged(Color color) {
-      setState(() {
-        pickerColor = color;
-      });
+      pickerColor = color;
     }
 
     showDialog(
@@ -36,49 +33,66 @@ class _NiveauManagementPageState extends State<NiveauManagementPage> {
           title: Text(
             niveau == null ? 'Ajouter un niveau' : 'Modifier le niveau',
           ),
-          content: SingleChildScrollView(
-            child: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextFormField(
-                    initialValue: nom,
-                    decoration: const InputDecoration(
-                      labelText: 'Nom du niveau',
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Le nom est requis.';
-                      }
-                      return null;
-                    },
-                    onSaved: (value) => nom = value!,
+          content: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return SingleChildScrollView(
+                child: Form(
+                  key: formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextFormField(
+                        initialValue: nom,
+                        decoration: const InputDecoration(
+                          labelText: 'Nom du niveau',
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Le nom est requis.';
+                          }
+                          return null;
+                        },
+                        onSaved: (value) => nom = value!,
+                      ),
+                      const SizedBox(height: 20),
+                      const Text("Image du niveau"),
+                      const SizedBox(height: 10),
+                      InkWell(
+                        child: Container(
+                          height: 150,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      const Text("Couleur du niveau"),
+                      const SizedBox(height: 10),
+                      ColorPicker(
+                        pickerColor: pickerColor,
+                        onColorChanged: onColorChanged,
+                        labelTypes: const [],
+                        pickerAreaHeightPercent: 0.8,
+                      ),
+                      TextFormField(
+                        initialValue: ordre.toString(),
+                        decoration: const InputDecoration(labelText: 'Ordre'),
+                        keyboardType: TextInputType.number,
+                        validator: (value) {
+                          if (value == null || int.tryParse(value) == null) {
+                            return 'L\'ordre doit être un nombre.';
+                          }
+                          return null;
+                        },
+                        onSaved: (value) => ordre = int.parse(value!),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 20),
-                  const Text("Couleur du niveau"),
-                  const SizedBox(height: 10),
-                  ColorPicker(
-                    pickerColor: pickerColor,
-                    onColorChanged: onColorChanged,
-                    labelTypes: const [],
-                    pickerAreaHeightPercent: 0.8,
-                  ),
-                  TextFormField(
-                    initialValue: ordre.toString(),
-                    decoration: const InputDecoration(labelText: 'Ordre'),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      if (value == null || int.tryParse(value) == null) {
-                        return 'L\'ordre doit être un nombre.';
-                      }
-                      return null;
-                    },
-                    onSaved: (value) => ordre = int.parse(value!),
-                  ),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           ),
           actions: [
             TextButton(
@@ -123,7 +137,6 @@ class _NiveauManagementPageState extends State<NiveauManagementPage> {
   }
 
   void _deleteNiveau(Niveau niveau) {
-    // First, check if any Eleve is associated with this Niveau
     final isNiveauInUse = HiveService.eleves.values.any(
       (eleve) => eleve.niveauId == niveau.id,
     );
@@ -159,6 +172,15 @@ class _NiveauManagementPageState extends State<NiveauManagementPage> {
                   style: TextStyle(color: Colors.red),
                 ),
                 onPressed: () {
+                  // Also delete associated lists
+                  final listesToDelete = HiveService.listes.values
+                      .where((liste) => liste.niveauId == niveau.id)
+                      .toList();
+                  for (var liste in listesToDelete) {
+                    // And the words in those lists
+                    HiveService.mots.deleteAll(liste.motsIds);
+                    liste.delete();
+                  }
                   niveau.delete();
                   Navigator.of(context).pop();
                 },
@@ -181,63 +203,63 @@ class _NiveauManagementPageState extends State<NiveauManagementPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Gestion des Niveaux')),
-      body: Stack(
-        children: [
-          ValueListenableBuilder(
-            valueListenable: HiveService.niveaux.listenable(),
-            builder: (context, Box<Niveau> box, _) {
-              final niveaux = box.values.toList()
-                ..sort((a, b) => a.ordre.compareTo(b.ordre));
-              return ReorderableListView.builder(
-                itemCount: niveaux.length,
-                itemBuilder: (context, index) {
-                  final niveau = niveaux[index];
-                  return ListTile(
-                    key: ValueKey(niveau.id),
-                    leading: CircleAvatar(
-                      backgroundColor: Color(niveau.couleur),
-                      child: Text(niveau.nom.substring(0, 1)),
+      body: ValueListenableBuilder(
+        valueListenable: HiveService.niveaux.listenable(),
+        builder: (context, Box<Niveau> box, _) {
+          final niveaux = box.values.toList()
+            ..sort((a, b) => a.ordre.compareTo(b.ordre));
+          return ReorderableListView.builder(
+            itemCount: niveaux.length,
+            itemBuilder: (context, index) {
+              final niveau = niveaux[index];
+              return ListTile(
+                key: ValueKey(niveau.id),
+                leading: CircleAvatar(backgroundColor: Colors.transparent),
+                title: Text(niveau.nom),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.list, color: Colors.blueGrey),
+                      tooltip: 'Voir les listes',
+                      onPressed: () => _navigateToNiveauListe(niveau),
                     ),
-                    title: Text(niveau.nom),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.list),
-                          onPressed: () => _navigateToNiveauListe(niveau),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.edit),
-                          onPressed: () => _showFormDialog(niveau: niveau),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete),
-                          onPressed: () => _deleteNiveau(niveau),
-                        ),
-                      ],
+                    IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.blueAccent),
+                      tooltip: 'Modifier le niveau',
+                      onPressed: () => _showFormDialog(niveau: niveau),
                     ),
-                  );
-                },
-                onReorder: (oldIndex, newIndex) {
-                  if (oldIndex < newIndex) {
-                    newIndex -= 1;
-                  }
-                  final item = niveaux.removeAt(oldIndex);
-                  niveaux.insert(newIndex, item);
-                  // Update order in database
-                  for (int i = 0; i < niveaux.length; i++) {
-                    final niveau = niveaux[i];
-                    niveau.ordre = i;
-                    niveau.save();
-                  }
-                },
+                    IconButton(
+                      icon: const Icon(
+                        Icons.delete_outline,
+                        color: Colors.redAccent,
+                      ),
+                      tooltip: 'Supprimer le niveau',
+                      onPressed: () => _deleteNiveau(niveau),
+                    ),
+                  ],
+                ),
               );
             },
-          ),
-        ],
+            onReorder: (oldIndex, newIndex) {
+              setState(() {
+                if (oldIndex < newIndex) {
+                  newIndex -= 1;
+                }
+                final item = niveaux.removeAt(oldIndex);
+                niveaux.insert(newIndex, item);
+                for (int i = 0; i < niveaux.length; i++) {
+                  niveaux[i].ordre = i + 1;
+                  niveaux[i].save();
+                }
+              });
+            },
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showFormDialog(),
+        tooltip: 'Ajouter un niveau',
         child: const Icon(Icons.add),
       ),
     );

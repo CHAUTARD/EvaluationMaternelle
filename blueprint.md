@@ -16,7 +16,7 @@ This application is designed to help teachers manage their students and their pr
 *   **Tabbed Student View:** Students are organized by level in a tabbed interface on the home page.
 *   **Settings Page:** A dedicated page for application settings.
 *   **Theme Selection:** Users can switch between light, dark, and system themes from the settings page.
-*   **Admin Page:** A separate page for all administrative tasks, accessible from the settings page.
+*   **Unified Settings:** The administrative functions for managing students, levels, lists, and history have been integrated directly into the settings page for a streamlined user experience.
 *   **Take Photo:** Users can take photos to use as images for lists and words.
 
 ### Current Plan

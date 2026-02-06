@@ -1,4 +1,5 @@
-// liste_detail_page.dart
+// liste_management_page.dart
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:myapp/models/models.dart';
@@ -38,6 +39,32 @@ class _ListeManagementPageState extends State<ListeManagementPage> {
     }
   }
 
+  ImageProvider _buildImageProvider(String imagePath) {
+    if (imagePath.startsWith('assets/')) {
+      return AssetImage(imagePath);
+    } else {
+      return FileImage(File(imagePath));
+    }
+  }
+
+  Widget _buildImageWidget(String imagePath) {
+    if (imagePath.startsWith('assets/')) {
+      return Image.asset(
+        imagePath,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) =>
+            const Center(child: Text('Image non trouvée')),
+      );
+    } else {
+      return Image.file(
+        File(imagePath),
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) =>
+            const Center(child: Text('Image corrompue')),
+      );
+    }
+  }
+
   void _showFormDialog({Liste? liste}) {
     final formKey = GlobalKey<FormState>();
     String nom = liste?.nom ?? '';
@@ -46,7 +73,6 @@ class _ListeManagementPageState extends State<ListeManagementPage> {
     showDialog(
       context: context,
       builder: (dialogContext) {
-        // Use a different context name to avoid confusion
         return AlertDialog(
           title: Text(
             liste == null ? 'Ajouter une liste' : 'Modifier la liste',
@@ -72,14 +98,12 @@ class _ListeManagementPageState extends State<ListeManagementPage> {
                     const SizedBox(height: 10),
                     InkWell(
                       onTap: () async {
-                        // The BuildContext of the dialog is used to push the new screen
                         final selectedImage = await Navigator.push<String>(
                           context,
                           MaterialPageRoute(
                             builder: (context) => const ImagePickerScreen(),
                           ),
                         );
-                        // After the await, we are back in the context of the StatefulBuilder
                         if (selectedImage != null) {
                           setState(() => imageName = selectedImage);
                         }
@@ -101,15 +125,7 @@ class _ListeManagementPageState extends State<ListeManagementPage> {
                               )
                             : ClipRRect(
                                 borderRadius: BorderRadius.circular(8),
-                                child: Image.asset(
-                                  // All images are now assets
-                                  imageName,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      const Center(
-                                        child: Text('Image non trouvée'),
-                                      ),
-                                ),
+                                child: _buildImageWidget(imageName),
                               ),
                       ),
                     ),
@@ -125,7 +141,6 @@ class _ListeManagementPageState extends State<ListeManagementPage> {
             ),
             ElevatedButton(
               onPressed: () async {
-                // Make async
                 if (formKey.currentState!.validate()) {
                   formKey.currentState!.save();
                   if (imageName.isEmpty) {
@@ -182,7 +197,7 @@ class _ListeManagementPageState extends State<ListeManagementPage> {
 
   Future<void> _deleteListe(Liste liste) async {
     final confirm = await showDialog<bool>(
-      context: context, // The page's context
+      context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Supprimer la liste'),
         content: const Text(
@@ -219,10 +234,6 @@ class _ListeManagementPageState extends State<ListeManagementPage> {
       context,
       MaterialPageRoute(builder: (context) => MotManagementPage(liste: liste)),
     );
-  }
-
-  ImageProvider _buildImageProvider(String imagePath) {
-    return AssetImage(imagePath);
   }
 
   @override

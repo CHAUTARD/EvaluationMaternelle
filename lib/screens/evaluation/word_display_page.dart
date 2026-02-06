@@ -1,10 +1,11 @@
+// word_display_page.dart
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'dart:math';
-import '../../models/models.dart';
-import '../../services/hive_service.dart';
+import 'package:myapp/models/models.dart';
+import 'package:myapp/services/hive_service.dart';
 import 'package:intl/intl.dart';
-import '../game/result_page.dart'; // Import ResultPage
+import 'package:myapp/screens/game/result_page.dart'; // Import ResultPage
 
 class WordDisplayPage extends StatefulWidget {
   final Liste liste;
@@ -18,8 +19,8 @@ class WordDisplayPage extends StatefulWidget {
 
 class _WordDisplayPageState extends State<WordDisplayPage> {
   final Box<Mot> _motsBox = HiveService.mots;
-  final Box<Historique> _historiqueBox =
-      HiveService.historique; // Correction ici
+  final Box<Historique> _historiqueBox = HiveService.historique;
+  final Box<Niveau> _niveauxBox = HiveService.niveaux; // Add Niveaux box
 
   List<Mot> _shuffledMots = [];
   int _currentIndex = 0;
@@ -28,6 +29,7 @@ class _WordDisplayPageState extends State<WordDisplayPage> {
   final List<WordEvaluation> _evaluations = []; // Use WordEvaluation list
 
   Historique? _lastTest;
+  Niveau? _niveau; // Add Niveau state variable
 
   @override
   void initState() {
@@ -56,12 +58,27 @@ class _WordDisplayPageState extends State<WordDisplayPage> {
             .toList()
           ..sort((a, b) => b.date.compareTo(a.date));
 
+    // 3. Charger le niveau de l'élève
+    Niveau? niveau;
+    try {
+      niveau = _niveauxBox.values.firstWhere(
+        (n) => n.id == widget.eleve.niveauId,
+      );
+    } catch (e) {
+      niveau = null; // Gérer le cas où le niveau n'est pas trouvé
+    }
+
     if (!mounted) return;
     setState(() {
       _shuffledMots = mots;
       _lastTest = lastTest.isNotEmpty ? lastTest.first : null;
+      _niveau = niveau; // Définir le niveau
       _isLoading = false;
     });
+  }
+
+  String _getNiveauName() {
+    return _niveau?.nom ?? 'N/A';
   }
 
   void _recordResultAndNext(bool reussi) {
@@ -123,7 +140,7 @@ class _WordDisplayPageState extends State<WordDisplayPage> {
                 Padding(
                   padding: const EdgeInsets.only(top: 16.0, bottom: 8.0),
                   child: Text(
-                    widget.eleve.nom,
+                    '${widget.eleve.nom} (${_getNiveauName()})',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),

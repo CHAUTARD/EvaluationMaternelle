@@ -69,7 +69,7 @@ class _EleveDetailPageState extends State<EleveDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('${widget.eleve.nom} {${_getNiveauName()}}')),
+      appBar: AppBar(title: Text('${widget.eleve.nom} (${_getNiveauName()})')),
       body: Stack(
         children: [
           _isLoading

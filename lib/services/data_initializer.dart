@@ -43,19 +43,19 @@ class DataInitializer {
 
       final liste1 = Liste()
         ..nom = 'Mots 1'
-        ..image = 'assets/images/default.png'
+        ..image = 'assets/images/Mots1.png'
         ..niveauId = niveauPetit.id
         ..motsIds = [];
 
       final liste2 = Liste()
         ..nom = 'Mots 2'
-        ..image = 'assets/images/default.png'
+        ..image = 'assets/images/Mots1.png'
         ..niveauId = niveauPetit.id
         ..motsIds = [];
 
       final liste3 = Liste()
         ..nom = 'Mots 3'
-        ..image = 'assets/images/default.png'
+        ..image = 'assets/images/Mots1.png'
         ..niveauId = niveauPetit.id
         ..motsIds = [];
 
