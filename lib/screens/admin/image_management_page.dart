@@ -1,6 +1,4 @@
 // lib/screens/admin/image_management_page.dart
-// Page pour gérer les images stockées dans Firebase Storage.
-
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -27,11 +25,8 @@ class _ImageManagementPageState extends State<ImageManagementPage> {
     _loadImages();
   }
 
-  // Charge la liste des images depuis Firebase Storage
   Future<void> _loadImages() async {
     if (!mounted) return;
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-
     setState(() {
       _isLoading = true;
     });
@@ -45,33 +40,28 @@ class _ImageManagementPageState extends State<ImageManagementPage> {
         files.add({'ref': ref, 'url': url});
       }
 
-      if (mounted) {
-        setState(() {
-          _imageRefs = files;
-          _isLoading = false;
-        });
-      }
+      if (!mounted) return;
+      setState(() {
+        _imageRefs = files;
+        _isLoading = false;
+      });
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-      scaffoldMessenger.showSnackBar(
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Erreur de chargement des images: $e")),
       );
     }
   }
 
-  // Sélectionne et téléverse une image
   Future<void> _uploadImage() async {
-    if (!mounted) return;
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
 
     if (image == null) {
-      scaffoldMessenger.showSnackBar(
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Aucune image sélectionnée.")),
       );
       return;
@@ -92,55 +82,48 @@ class _ImageManagementPageState extends State<ImageManagementPage> {
 
       await uploadTask;
 
-      if (mounted) {
-        setState(() {
-          _uploadProgress = null;
-        });
-      }
-      scaffoldMessenger.showSnackBar(
+      if (!mounted) return;
+      setState(() {
+        _uploadProgress = null;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text("Image téléversée avec succès !"),
             backgroundColor: Colors.green),
       );
-      await _loadImages(); // Rafraîchit la liste
+      await _loadImages(); // This will handle its own mounted checks
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _uploadProgress = null;
-        });
-      }
-      scaffoldMessenger.showSnackBar(
+      if (!mounted) return;
+      setState(() {
+        _uploadProgress = null;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Erreur de téléversement: $e")),
       );
     }
   }
 
-  // Supprime une image
   Future<void> _deleteImage(Reference ref) async {
-    if (!mounted) return;
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-
     try {
       await ref.delete();
-      scaffoldMessenger.showSnackBar(
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text("Image supprimée."), backgroundColor: Colors.orange),
       );
-      await _loadImages(); // Rafraîchit la liste
+      await _loadImages(); // This will handle its own mounted checks
     } catch (e) {
-      scaffoldMessenger.showSnackBar(
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Erreur de suppression: $e")),
       );
     }
   }
 
-  // Copie l'URL dans le presse-papiers
   void _copyUrlToClipboard(String url) {
-    if (!mounted) return;
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-
     Clipboard.setData(ClipboardData(text: url));
-    scaffoldMessenger.showSnackBar(
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text("URL de l'image copiée !"),
       ),

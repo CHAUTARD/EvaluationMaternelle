@@ -20,6 +20,18 @@ class HiveService extends ChangeNotifier {
     Hive.registerAdapter(ActivityHistoryAdapter());
     Hive.registerAdapter(HistoriqueAdapter());
 
+    // TEMPORARY FIX: Clear all Hive boxes on the web to resolve deserialization errors.
+    // This is useful during development but should be replaced with a proper migration strategy
+    // for production to avoid data loss for users.
+    if (kIsWeb) {
+      await Hive.deleteBoxFromDisk('eleves');
+      await Hive.deleteBoxFromDisk('niveaux');
+      await Hive.deleteBoxFromDisk('listes');
+      await Hive.deleteBoxFromDisk('mots');
+      await Hive.deleteBoxFromDisk('activity_history');
+      await Hive.deleteBoxFromDisk('historique');
+    }
+
     _eleves = await Hive.openBox<Eleve>('eleves');
     _niveaux = await Hive.openBox<Niveau>('niveaux');
     _listes = await Hive.openBox<Liste>('listes');

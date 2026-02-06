@@ -30,7 +30,7 @@ class _MotManagementPageState extends State<MotManagementPage> {
 
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
           title: Text(mot == null ? 'Ajouter un mot' : 'Modifier le mot'),
           content: StatefulBuilder(
@@ -42,7 +42,9 @@ class _MotManagementPageState extends State<MotManagementPage> {
                   children: [
                     TextFormField(
                       initialValue: motText,
-                      decoration: const InputDecoration(labelText: 'Mot ou texte'),
+                      decoration: const InputDecoration(
+                        labelText: 'Mot ou texte',
+                      ),
                       validator: (value) =>
                           value!.trim().isEmpty ? 'Le texte est requis.' : null,
                       onSaved: (value) => motText = value!,
@@ -52,10 +54,11 @@ class _MotManagementPageState extends State<MotManagementPage> {
                     const SizedBox(height: 10),
                     InkWell(
                       onTap: () async {
-                        final navigator = Navigator.of(context);
-                        final selectedImage = await navigator.push<String>(
+                        final selectedImage = await Navigator.push<String>(
+                          context,
                           MaterialPageRoute(
-                              builder: (context) => const ImagePickerScreen()),
+                            builder: (context) => const ImagePickerScreen(),
+                          ),
                         );
                         if (selectedImage != null) {
                           setState(() => imageName = selectedImage);
@@ -70,15 +73,21 @@ class _MotManagementPageState extends State<MotManagementPage> {
                         ),
                         child: imageName.isEmpty
                             ? const Center(
-                                child: Icon(Icons.add_photo_alternate,
-                                    size: 40, color: Colors.grey))
+                                child: Icon(
+                                  Icons.add_photo_alternate,
+                                  size: 40,
+                                  color: Colors.grey,
+                                ),
+                              )
                             : ClipRRect(
                                 borderRadius: BorderRadius.circular(8),
                                 child: Image.asset(
-                                  'assets/images/$imageName',
+                                  imageName, // All images are now assets
                                   fit: BoxFit.cover,
                                   errorBuilder: (context, error, stackTrace) =>
-                                      const Center(child: Text('Image non trouvée')),
+                                      const Center(
+                                        child: Text('Image non trouvée'),
+                                      ),
                                 ),
                               ),
                       ),
@@ -90,27 +99,29 @@ class _MotManagementPageState extends State<MotManagementPage> {
           ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Annuler')),
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Annuler'),
+            ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 if (formKey.currentState!.validate()) {
                   formKey.currentState!.save();
-                  final scaffoldMessenger = ScaffoldMessenger.of(context);
-                  final navigator = Navigator.of(context);
 
                   if (imageName.isEmpty) {
-                    scaffoldMessenger.showSnackBar(
-                      const SnackBar(content: Text('Veuillez sélectionner une image.')),
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      const SnackBar(
+                        content: Text('Veuillez sélectionner une image.'),
+                      ),
                     );
                     return;
                   }
+
                   if (mot == null) {
-                    _addMot(motText, imageName);
+                    await _addMot(motText, imageName);
                   } else {
-                    _updateMot(mot, motText, imageName);
+                    await _updateMot(mot, motText, imageName);
                   }
-                  navigator.pop();
+                  if (dialogContext.mounted) Navigator.pop(dialogContext);
                 }
               },
               child: const Text('Enregistrer'),
@@ -144,12 +155,14 @@ class _MotManagementPageState extends State<MotManagementPage> {
     await mot.delete();
   }
 
+  ImageProvider _buildImageProvider(String imagePath) {
+    return AssetImage(imagePath);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Contenu: ${widget.liste.nom}"),
-      ),
+      appBar: AppBar(title: Text("Contenu: ${widget.liste.nom}")),
       body: ValueListenableBuilder(
         valueListenable: _motsBox.listenable(),
         builder: (context, Box<Mot> box, _) {
@@ -159,8 +172,10 @@ class _MotManagementPageState extends State<MotManagementPage> {
 
           if (mots.isEmpty) {
             return const Center(
-                child: Text(
-                    'Cette liste est vide. Ajoutez un mot pour commencer.'));
+              child: Text(
+                'Cette liste est vide. Ajoutez un mot pour commencer.',
+              ),
+            );
           }
 
           return ListView.builder(
@@ -168,11 +183,10 @@ class _MotManagementPageState extends State<MotManagementPage> {
             itemBuilder: (context, index) {
               final mot = mots[index];
               return Card(
-                margin:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 child: ListTile(
                   leading: CircleAvatar(
-                    backgroundImage: AssetImage('assets/images/${mot.image}'),
+                    backgroundImage: _buildImageProvider(mot.image),
                   ),
                   title: Text(mot.word),
                   trailing: Row(
@@ -183,8 +197,10 @@ class _MotManagementPageState extends State<MotManagementPage> {
                         onPressed: () => _showFormDialog(mot: mot),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.delete_outline,
-                            color: Colors.redAccent),
+                        icon: const Icon(
+                          Icons.delete_outline,
+                          color: Colors.redAccent,
+                        ),
                         onPressed: () => _deleteMot(mot),
                       ),
                     ],

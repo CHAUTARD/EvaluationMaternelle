@@ -67,7 +67,7 @@ class _HistoriquePageState extends State<HistoriquePage> {
               ...box.values.map((eleve) {
                 return DropdownMenuItem<Eleve>(
                   value: eleve,
-                  child: Text(eleve.prenom),
+                  child: Text(eleve.nom),
                 );
               }),
             ],
@@ -124,7 +124,7 @@ class _HistoriquePageState extends State<HistoriquePage> {
               elevation: 2,
               child: ListTile(
                 title: Text(
-                  '${eleve?.prenom ?? 'N/A'} - ${liste?.nom ?? 'N/A'}',
+                  '${eleve?.nom ?? 'N/A'} - ${liste?.nom ?? 'N/A'}',
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 subtitle: Text(

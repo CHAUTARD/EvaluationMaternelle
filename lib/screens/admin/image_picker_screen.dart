@@ -1,6 +1,8 @@
+
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:myapp/screens/admin/take_photo_screen.dart';
 
 class ImagePickerScreen extends StatefulWidget {
   const ImagePickerScreen({super.key});
@@ -26,18 +28,39 @@ class _ImagePickerScreenState extends State<ImagePickerScreen> {
 
       final imagePaths = manifestMap.keys
           .where((String key) => key.startsWith('assets/images/'))
-          .map((key) => key.split('/').last)
-          .toList();
+          .toList(); // Keep the full path
 
-      setState(() {
-        _imagePaths = imagePaths;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _imagePaths = imagePaths;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
       // Handle error
+    }
+  }
+
+  // Correctly handles BuildContext across async gap.
+  Future<void> _navigateAndPickImage() async {
+    // Navigator.push is async.
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const TakePhotoScreen(),
+      ),
+    );
+
+    // After the await, check if the widget is still mounted.
+    if (!mounted) return;
+
+    // If it is, and we have a result, we can safely use the State's context.
+    if (result != null) {
+      Navigator.of(context).pop(result);
     }
   }
 
@@ -59,10 +82,12 @@ class _ImagePickerScreenState extends State<ImagePickerScreen> {
                   ),
                   itemCount: _imagePaths.length,
                   itemBuilder: (context, index) {
-                    final imageName = _imagePaths[index];
+                    final imagePath = _imagePaths[index];
+                    final imageName = imagePath.split('/').last;
                     return GestureDetector(
                       onTap: () {
-                        Navigator.pop(context, imageName);
+                        // This is synchronous, so it's safe.
+                        Navigator.pop(context, imagePath);
                       },
                       child: Card(
                         clipBehavior: Clip.antiAlias,
@@ -76,7 +101,7 @@ class _ImagePickerScreenState extends State<ImagePickerScreen> {
                             ),
                           ),
                           child: Image.asset(
-                            'assets/images/$imageName',
+                            imagePath,
                             fit: BoxFit.cover,
                           ),
                         ),
@@ -84,6 +109,10 @@ class _ImagePickerScreenState extends State<ImagePickerScreen> {
                     );
                   },
                 ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _navigateAndPickImage, // Call the safe async method.
+        child: const Icon(Icons.camera_alt),
+      ),
     );
   }
 }

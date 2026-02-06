@@ -8,7 +8,7 @@ part of 'niveau.dart';
 
 class NiveauAdapter extends TypeAdapter<Niveau> {
   @override
-  final int typeId = 5;
+  final int typeId = 0;
 
   @override
   Niveau read(BinaryReader reader) {
@@ -16,11 +16,12 @@ class NiveauAdapter extends TypeAdapter<Niveau> {
     final fields = <int, dynamic>{
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
-    return Niveau()
-      ..nom = fields[0] as String
-      ..couleur = fields[1] as String
-      ..ordre = fields[2] as int
-      ..listesIds = (fields[3] as List).cast<int>();
+    return Niveau(
+      id: fields[0] as String,
+      nom: fields[1] as String,
+      couleur: fields[2] as int,
+      ordre: fields[3] as int,
+    );
   }
 
   @override
@@ -28,13 +29,13 @@ class NiveauAdapter extends TypeAdapter<Niveau> {
     writer
       ..writeByte(4)
       ..writeByte(0)
-      ..write(obj.nom)
+      ..write(obj.id)
       ..writeByte(1)
-      ..write(obj.couleur)
+      ..write(obj.nom)
       ..writeByte(2)
-      ..write(obj.ordre)
+      ..write(obj.couleur)
       ..writeByte(3)
-      ..write(obj.listesIds);
+      ..write(obj.ordre);
   }
 
   @override

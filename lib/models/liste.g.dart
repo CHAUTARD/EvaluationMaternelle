@@ -20,7 +20,7 @@ class ListeAdapter extends TypeAdapter<Liste> {
       ..nom = fields[0] as String
       ..image = fields[1] as String
       ..motsIds = (fields[2] as List).cast<int>()
-      ..niveauId = fields[3] as int;
+      ..niveauId = fields[3] as String;
   }
 
   @override

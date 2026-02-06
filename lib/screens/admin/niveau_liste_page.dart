@@ -23,11 +23,11 @@ class _NiveauListePageState extends State<NiveauListePage> {
 
   Future<void> _onCheckboxChanged(Liste liste, bool isChecked) async {
     if (isChecked) {
-      widget.niveau.listesIds.add(liste.key);
+      liste.niveauId = widget.niveau.id;
     } else {
-      widget.niveau.listesIds.remove(liste.key);
+      liste.niveauId = ''; // Use an empty string to indicate no association
     }
-    await widget.niveau.save();
+    await liste.save();
     setState(() {});
   }
 
@@ -45,7 +45,7 @@ class _NiveauListePageState extends State<NiveauListePage> {
             itemCount: allListes.length,
             itemBuilder: (context, index) {
               final liste = allListes[index];
-              final isAssociated = widget.niveau.listesIds.contains(liste.key);
+              final isAssociated = liste.niveauId == widget.niveau.id;
 
               return CheckboxListTile(
                 title: Text(liste.nom),

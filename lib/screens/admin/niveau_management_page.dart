@@ -1,7 +1,10 @@
+
 import 'package:flutter/material.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:myapp/models/models.dart';
 import 'package:myapp/services/hive_service.dart';
+import 'package:uuid/uuid.dart';
 import './niveau_liste_page.dart';
 
 class NiveauManagementPage extends StatefulWidget {
@@ -12,58 +15,27 @@ class NiveauManagementPage extends StatefulWidget {
 }
 
 class _NiveauManagementPageState extends State<NiveauManagementPage> {
-  late Box<Niveau> _niveauxBox;
-  late Box<Eleve> _elevesBox;
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _openBoxes();
-  }
-
-  Future<void> _openBoxes() async {
-    if (!mounted) return;
-    try {
-      _niveauxBox = HiveService.niveaux;
-      _elevesBox = HiveService.eleves;
-      setState(() {
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erreur de chargement des données: $e")),
-        );
-      }
-    }
-  }
-
-  Color _getColorFromHex(String hexColor) {
-    hexColor = hexColor.toUpperCase().replaceAll('#', '');
-    if (hexColor.length == 6) {
-      hexColor = 'FF$hexColor';
-      return Color(int.parse(hexColor, radix: 16));
-    }
-    return Colors.grey;
-  }
+  final Uuid _uuid = const Uuid();
 
   void _showFormDialog({Niveau? niveau}) {
     final formKey = GlobalKey<FormState>();
     String nom = niveau?.nom ?? '';
-    String couleur = niveau?.couleur ?? '#4285F4';
-    int ordre = niveau?.ordre ??
-        (_niveauxBox.isEmpty
-            ? 1
-            : _niveauxBox.values.map((n) => n.ordre).reduce((a, b) => a > b ? a : b) + 1);
+    Color pickerColor = niveau != null ? Color(niveau.couleur) : Colors.blue;
+    int ordre = niveau?.ordre ?? (HiveService.niveaux.length + 1);
+
+    void onColorChanged(Color color) {
+      setState(() {
+        pickerColor = color;
+      });
+    }
 
     showDialog(
       context: context,
       builder: (context) {
-        return StatefulBuilder(builder: (context, setStateDialog) {
-          return AlertDialog(
-            title: Text(niveau == null ? 'Ajouter un niveau' : 'Modifier le niveau'),
-            content: Form(
+        return AlertDialog(
+          title: Text(niveau == null ? 'Ajouter un niveau' : 'Modifier le niveau'),
+          content: SingleChildScrollView(
+            child: Form(
               key: formKey,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -79,38 +51,14 @@ class _NiveauManagementPageState extends State<NiveauManagementPage> {
                     },
                     onSaved: (value) => nom = value!,
                   ),
-                  const SizedBox(height: 16),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          initialValue: couleur,
-                          decoration: const InputDecoration(
-                              labelText: 'Couleur (ex: #FF0000)'),
-                          onChanged: (value) {
-                            if (RegExp(r'^#[0-9a-fA-F]{6}$').hasMatch(value)) {
-                              setStateDialog(() {
-                                couleur = value;
-                              });
-                            }
-                          },
-                          validator: (value) {
-                            if (value == null ||
-                                !RegExp(r'^#[0-9a-fA-F]{6}$').hasMatch(value)) {
-                              return 'Format invalide.';
-                            }
-                            return null;
-                          },
-                          onSaved: (value) => couleur = value!,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      CircleAvatar(
-                        backgroundColor: _getColorFromHex(couleur),
-                        radius: 15,
-                      ),
-                    ],
+                  const SizedBox(height: 20),
+                  const Text("Couleur du niveau"),
+                  const SizedBox(height: 10),
+                  ColorPicker(
+                    pickerColor: pickerColor,
+                    onColorChanged: onColorChanged,
+                    labelTypes: const [],
+                    pickerAreaHeightPercent: 0.8,
                   ),
                   TextFormField(
                     initialValue: ordre.toString(),
@@ -127,102 +75,92 @@ class _NiveauManagementPageState extends State<NiveauManagementPage> {
                 ],
               ),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Annuler'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  if (formKey.currentState!.validate()) {
-                    formKey.currentState!.save();
-                    if (niveau == null) {
-                      _addNiveau(nom, couleur, ordre);
-                    } else {
-                      _updateNiveau(niveau, nom, couleur, ordre);
-                    }
-                    Navigator.pop(context);
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Annuler'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  formKey.currentState!.save();
+                  if (niveau == null) {
+                    _addNiveau(nom, pickerColor.toARGB32(), ordre);
+                  } else {
+                    _updateNiveau(niveau, nom, pickerColor.toARGB32(), ordre);
                   }
-                },
-                child: const Text('Enregistrer'),
-              ),
-            ],
-          );
-        });
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Enregistrer'),
+            ),
+          ],
+        );
       },
     );
   }
 
-  Future<void> _addNiveau(String nom, String couleur, int ordre) async {
-    try {
-      final newNiveau = Niveau()
-        ..nom = nom
-        ..couleur = couleur
-        ..ordre = ordre
-        ..listesIds = [];
-      await _niveauxBox.add(newNiveau);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Erreur lors de l'ajout: $e")));
-      }
-    }
-  }
-
-  Future<void> _updateNiveau(Niveau niveau, String nom, String couleur, int ordre) async {
-    try {
-      niveau.nom = nom;
-      niveau.couleur = couleur;
-      niveau.ordre = ordre;
-      await niveau.save();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Erreur de mise à jour: $e")));
-      }
-    }
-  }
-
-    Future<void> _deleteNiveau(Niveau niveau) async {
-    final associatedEleves = _elevesBox.values.where((e) => e.niveauId == niveau.key).length;
-
-    if (associatedEleves > 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ce niveau est associé à un ou plusieurs élèves et ne peut pas être supprimé.')),
-      );
-      return;
-    }
-
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Supprimer le niveau'),
-        content: const Text('Êtes-vous sûr de vouloir supprimer ce niveau ?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Annuler')),
-          TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Supprimer', style: TextStyle(color: Colors.red))),
-        ],
-      ),
+  void _addNiveau(String nom, int couleur, int ordre) {
+    final newNiveau = Niveau(
+      id: _uuid.v4(),
+      nom: nom,
+      couleur: couleur,
+      ordre: ordre,
     );
-
-    if (confirm != true) return;
-
-    try {
-      await niveau.delete();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Erreur de suppression: $e")));
-      }
-    }
+    HiveService.niveaux.put(newNiveau.id, newNiveau);
   }
 
+  void _updateNiveau(Niveau niveau, String nom, int couleur, int ordre) {
+    niveau.nom = nom;
+    niveau.couleur = couleur;
+    niveau.ordre = ordre;
+    niveau.save();
+  }
+
+  void _deleteNiveau(Niveau niveau) {
+    // First, check if any Eleve is associated with this Niveau
+    final isNiveauInUse = HiveService.eleves.values.any((eleve) => eleve.niveauId == niveau.id);
+
+    if (isNiveauInUse) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Impossible de supprimer ce niveau car il est utilisé par un ou plusieurs élèves.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } else {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Confirmer la suppression'),
+            content: const Text('Êtes-vous sûr de vouloir supprimer ce niveau ?'),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('Annuler'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+              TextButton(
+                child: const Text('Supprimer', style: TextStyle(color: Colors.red)),
+                onPressed: () {
+                  niveau.delete();
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
+  
   void _navigateToNiveauListe(Niveau niveau) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => NiveauListePage(niveau: niveau),
-      ),
+      MaterialPageRoute(builder: (context) => NiveauListePage(niveau: niveau)),
     );
   }
 
@@ -230,63 +168,58 @@ class _NiveauManagementPageState extends State<NiveauManagementPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Gestion des Niveaux')),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : ValueListenableBuilder(
-              valueListenable: _niveauxBox.listenable(),
-              builder: (context, Box<Niveau> box, _) {
-                final niveaux = box.values.toList()..sort((a, b) => a.ordre.compareTo(b.ordre));
-                return ReorderableListView.builder(
-                  itemCount: niveaux.length,
-                  itemBuilder: (context, index) {
-                    final niveau = niveaux[index];
-                    return ListTile(
-                      key: ValueKey(niveau.key),
-                      tileColor: index.isEven ? Colors.grey[100] : Colors.white,
-                      title: Text(niveau.nom),
-                      subtitle: Text('Ordre: ${niveau.ordre}'),
-                      leading: CircleAvatar(
-                        backgroundColor: _getColorFromHex(niveau.couleur),
-                        child: Text((index + 1).toString(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),),
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.list_alt, color: Colors.purple),
-                            tooltip: 'Gérer les listes associées',
-                            onPressed: () => _navigateToNiveauListe(niveau),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.edit, color: Colors.blueAccent),
-                            onPressed: () => _showFormDialog(niveau: niveau),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                            onPressed: () => _deleteNiveau(niveau),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                  onReorder: (oldIndex, newIndex) async {
-                    if (newIndex > oldIndex) {
-                      newIndex -= 1;
-                    }
-                    final item = niveaux.removeAt(oldIndex);
-                    niveaux.insert(newIndex, item);
-
-                    for (int i = 0; i < niveaux.length; i++) {
-                      niveaux[i].ordre = i + 1;
-                      await niveaux[i].save();
-                    }
-                  },
-                );
-              },
-            ),
+      body: ValueListenableBuilder(
+        valueListenable: HiveService.niveaux.listenable(),
+        builder: (context, Box<Niveau> box, _) {
+          final niveaux = box.values.toList()..sort((a, b) => a.ordre.compareTo(b.ordre));
+          return ReorderableListView.builder(
+            itemCount: niveaux.length,
+            itemBuilder: (context, index) {
+              final niveau = niveaux[index];
+              return ListTile(
+                key: ValueKey(niveau.id),
+                leading: CircleAvatar(
+                  backgroundColor: Color(niveau.couleur),
+                  child: Text(niveau.nom.substring(0, 1)),
+                ),
+                title: Text(niveau.nom),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                     IconButton(
+                      icon: const Icon(Icons.list),
+                      onPressed: () => _navigateToNiveauListe(niveau),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.edit),
+                      onPressed: () => _showFormDialog(niveau: niveau),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: () => _deleteNiveau(niveau),
+                    ),
+                  ],
+                ),
+              );
+            },
+            onReorder: (oldIndex, newIndex) {
+              if (oldIndex < newIndex) {
+                newIndex -= 1;
+              }
+              final item = niveaux.removeAt(oldIndex);
+              niveaux.insert(newIndex, item);
+              // Update order in database
+              for (int i = 0; i < niveaux.length; i++) {
+                final niveau = niveaux[i];
+                niveau.ordre = i;
+                niveau.save();
+              }
+            },
+          );
+        },
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showFormDialog(),
-        tooltip: 'Ajouter un niveau',
         child: const Icon(Icons.add),
       ),
     );

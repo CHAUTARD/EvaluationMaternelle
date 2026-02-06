@@ -1,163 +1,165 @@
-// home_page.dart
+// lib/screens/home/home_page.dart
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../main.dart'; // Import ThemeProvider
-import '../../services/hive_service.dart'; // Import HiveService
-import '../admin/eleve_management_page.dart';
-import '../admin/historique_page.dart';
-import '../admin/liste_management_page.dart';
-import '../admin/niveau_management_page.dart';
-import '../game/matching_game_page.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:myapp/models/eleve.dart';
+import 'package:myapp/models/niveau.dart';
+import 'package:myapp/screens/eleve_detail_page.dart';
+import 'package:myapp/screens/settings/settings_page.dart';
+import 'package:myapp/services/hive_service.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
+  State<HomePage> createState() => _HomePageState();
+}
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('App d\'apprentissage'),
-        actions: [
-          IconButton(
-            icon: Icon(
-              themeProvider.themeMode == ThemeMode.dark
-                  ? Icons.light_mode
-                  : Icons.dark_mode,
-            ),
-            onPressed: () => themeProvider.toggleTheme(),
-            tooltip: 'Changer le thème',
-          ),
-          IconButton(
-            icon: const Icon(Icons.auto_mode),
-            onPressed: () => themeProvider.setSystemTheme(),
-            tooltip: 'Thème système',
-          ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: GridView.count(
-          crossAxisCount: 2,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          children: [
-            _buildDashboardItem(
-              context,
-              icon: Icons.people_alt_rounded,
-              label: 'Élèves',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const EleveManagementPage(),
-                  ),
-                );
-              },
-            ),
-            _buildDashboardItem(
-              context,
-              icon: Icons.layers_rounded,
-              label: 'Niveaux',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const NiveauManagementPage(),
-                  ),
-                );
-              },
-            ),
-            _buildDashboardItem(
-              context,
-              icon: Icons.list_alt_rounded,
-              label: 'Listes',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ListeManagementPage(),
-                  ),
-                );
-              },
-            ),
-            _buildDashboardItem(
-              context,
-              icon: Icons.history_edu_rounded,
-              label: 'Historique',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const HistoriquePage(),
-                  ),
-                );
-              },
-            ),
-            _buildDashboardItem(
-              context,
-              icon: Icons.sports_esports_rounded,
-              label: 'Jeu de correspondance',
-              color: Theme.of(context).colorScheme.secondary,
-              onTap: () {
-                final words = HiveService.mots.values.toList();
-                if (context.mounted) {
-                  if (words.length < 4) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Il faut au moins 4 mots pour démarrer le jeu.',
-                        ),
-                      ),
-                    );
-                  } else {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => MatchingGamePage(words: words),
-                      ),
-                    );
-                  }
-                }
-              },
-            ),
-          ],
-        ),
-      ),
-    );
+class _HomePageState extends State<HomePage>
+    with SingleTickerProviderStateMixin {
+  TabController? _tabController;
+  List<Niveau> _niveaux = [];
+  Map<String, List<Eleve>> _elevesByNiveau = {};
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    // Listen for changes in the boxes to rebuild the UI
+    HiveService.niveaux.listenable().addListener(_loadData);
+    HiveService.eleves.listenable().addListener(_loadData);
+    _loadData(); // Load initial data
   }
 
-  Widget _buildDashboardItem(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    Color? color,
-  }) {
-    final textTheme = Theme.of(context).textTheme;
-    final colorScheme = Theme.of(context).colorScheme;
+  void _updateTabController(int length) {
+    if (_tabController?.length != length) {
+      _tabController?.dispose(); // Dispose the old one if it exists
+      _tabController = TabController(length: length, vsync: this);
+    }
+  }
 
-    return Card(
-      elevation: 4,
-      shadowColor: colorScheme.shadow.withAlpha(102),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 48, color: color ?? colorScheme.primary),
-            const SizedBox(height: 12),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: textTheme.titleLarge?.copyWith(fontSize: 16),
-            ),
-          ],
-        ),
+  void _loadData() {
+    final niveaux = HiveService.niveaux.values.toList();
+    final eleves = HiveService.eleves.values.toList();
+
+    // Sort niveaux by their predefined order
+    niveaux.sort((a, b) => a.ordre.compareTo(b.ordre));
+
+    _updateTabController(niveaux.length);
+
+    setState(() {
+      _niveaux = niveaux;
+      _elevesByNiveau = _groupElevesByNiveau(eleves, niveaux);
+      _isLoading = false;
+    });
+  }
+
+  Map<String, List<Eleve>> _groupElevesByNiveau(
+    List<Eleve> eleves,
+    List<Niveau> niveaux,
+  ) {
+    final map = <String, List<Eleve>>{};
+    for (var niveau in niveaux) {
+      map[niveau.id] = eleves
+          .where((eleve) => eleve.niveauId == niveau.id)
+          .toList();
+    }
+    return map;
+  }
+
+  @override
+  void dispose() {
+    HiveService.niveaux.listenable().removeListener(_loadData);
+    HiveService.eleves.listenable().removeListener(_loadData);
+    _tabController?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Élèves par niveau'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsPage()),
+              );
+            },
+            tooltip: 'Paramètres',
+          ),
+        ],
+        bottom: _isLoading || _niveaux.isEmpty
+            ? null
+            : TabBar(
+                controller: _tabController,
+                isScrollable: true,
+                tabs: _niveaux.map((niveau) {
+                  return Tab(
+                    child: Row(
+                      children: [
+                        Icon(Icons.circle, color: niveau.color, size: 12),
+                        const SizedBox(width: 8),
+                        Text(
+                          niveau.nom,
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: niveau.color, // Use the level's color for the text
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
       ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _niveaux.isEmpty
+          ? const Center(
+              child: Text(
+                'Aucun niveau trouvé.\nAjoutez des niveaux et des élèves dans les paramètres.',
+                textAlign: TextAlign.center,
+              ),
+            )
+          : TabBarView(
+              controller: _tabController,
+              children: _niveaux.map((niveau) {
+                final eleves = _elevesByNiveau[niveau.id] ?? [];
+                if (eleves.isEmpty) {
+                  return const Center(
+                    child: Text('Aucun élève dans ce niveau.'),
+                  );
+                }
+                return ListView.builder(
+                  itemCount: eleves.length,
+                  itemBuilder: (context, index) {
+                    final eleve = eleves[index];
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: niveau.color,
+                        child: Text(
+                          eleve.nom.substring(0, 1).toUpperCase(),
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ),
+                      title: Text(eleve.nom),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => EleveDetailPage(eleve: eleve),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                );
+              }).toList(),
+            ),
     );
   }
 }

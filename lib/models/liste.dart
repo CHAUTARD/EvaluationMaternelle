@@ -14,5 +14,5 @@ class Liste extends HiveObject {
   late List<int> motsIds;
 
   @HiveField(3)
-  late int niveauId;
+  late String niveauId;
 }

@@ -109,7 +109,7 @@ class _SpellingPageState extends State<SpellingPage> {
                     Padding(
                       padding: const EdgeInsets.only(top: 16.0, bottom: 8.0),
                       child: Text(
-                        widget.eleve.prenom,
+                        widget.eleve.nom,
                         style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                               fontWeight: FontWeight.bold,
                             ),

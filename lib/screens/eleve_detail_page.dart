@@ -26,36 +26,22 @@ class _EleveDetailPageState extends State<EleveDetailPage> {
 
   Future<void> _loadActivites() async {
     // Récupérer les boxes Hive
-    final niveauxBox = HiveService.niveaux;
     final listesBox = HiveService.listes;
+    final niveauxBox = HiveService.niveaux;
 
-    // Trouver le niveau de l'élève en utilisant son `niveauId`.
-    // La `key` dans Hive est un `int`, donc nous utilisons `widget.eleve.niveauId` directement.
-    final niveau = niveauxBox.get(widget.eleve.niveauId);
+    // Find the niveau that corresponds to the eleve's niveauId
+    final niveau = niveauxBox.values.firstWhere((n) => n.id == widget.eleve.niveauId);
 
-    if (niveau != null) {
-      // Pour ce niveau, récupérer toutes les listes d'activités associées.
-      // `niveau.listesIds` contient les clés des listes à récupérer.
-      final activites = niveau.listesIds
-          .map((id) => listesBox.get(id))
-          // Filtrer au cas où une liste aurait été supprimée mais sa référence existerait toujours.
-          .where((liste) => liste != null)
-          .cast<Liste>()
-          .toList();
+    // Récupérer toutes les listes et les filtrer par niveauId
+    final activites = listesBox.values
+        .where((liste) => liste.niveauId == niveau.key)
+        .toList();
 
-      if (mounted) {
-        setState(() {
-          _activites = activites;
-          _isLoading = false;
-        });
-      }
-    } else {
-      // Si aucun niveau n'est trouvé pour l'élève.
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+    if (mounted) {
+      setState(() {
+        _activites = activites;
+        _isLoading = false;
+      });
     }
   }
 
@@ -63,7 +49,7 @@ class _EleveDetailPageState extends State<EleveDetailPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.eleve.prenom),
+        title: Text(widget.eleve.nom),
         // Vous pouvez ajouter une CircleAvatar ici si vous le souhaitez
         // leading: CircleAvatar(backgroundImage: AssetImage('assets/images/${widget.eleve.avatar}')),
       ),
