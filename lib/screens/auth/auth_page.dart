@@ -1,3 +1,4 @@
+/*
 import 'package:flutter/material.dart';
 
 class AuthPage extends StatelessWidget {
@@ -11,3 +12,4 @@ class AuthPage extends StatelessWidget {
     );
   }
 }
+*/

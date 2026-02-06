@@ -169,7 +169,7 @@ class _WordDisplayPageState extends State<WordDisplayPage> {
                         Padding(
                           padding: const EdgeInsets.all(16.0),
                           child: Image.asset(
-                            'assets/images/${_shuffledMots[_currentIndex].image}',
+                            _shuffledMots[_currentIndex].image,
                             height: 150,
                             fit: BoxFit.contain,
                             errorBuilder: (context, error, stackTrace) =>

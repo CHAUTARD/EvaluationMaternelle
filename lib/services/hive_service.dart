@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/models.dart';
 
-class HiveService extends ChangeNotifier {
+class HiveService {
   static late Box<Eleve> _eleves;
   static late Box<Niveau> _niveaux;
   static late Box<Liste> _listes;
@@ -20,9 +20,6 @@ class HiveService extends ChangeNotifier {
     Hive.registerAdapter(ActivityHistoryAdapter());
     Hive.registerAdapter(HistoriqueAdapter());
 
-    // TEMPORARY FIX: Clear all Hive boxes on the web to resolve deserialization errors.
-    // This is useful during development but should be replaced with a proper migration strategy
-    // for production to avoid data loss for users.
     if (kIsWeb) {
       await Hive.deleteBoxFromDisk('eleves');
       await Hive.deleteBoxFromDisk('niveaux');
@@ -46,4 +43,14 @@ class HiveService extends ChangeNotifier {
   static Box<Mot> get mots => _mots;
   static Box<ActivityHistory> get activityHistory => _activityHistory;
   static Box<Historique> get historique => _historique;
+
+  // Eleve methods
+  static Future<void> addEleve(Eleve eleve) async {
+    await _eleves.put(eleve.id, eleve);
+  }
+
+  // Niveau methods
+  static List<Niveau> getAllNiveaux() {
+    return _niveaux.values.toList();
+  }
 }

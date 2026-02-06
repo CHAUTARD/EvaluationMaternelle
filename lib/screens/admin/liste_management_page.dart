@@ -40,7 +40,7 @@ class _ListeManagementPageState extends State<ListeManagementPage> {
   }
 
   ImageProvider _buildImageProvider(String imagePath) {
-    if (imagePath.startsWith('assets/')) {
+    if (imagePath.startsWith('images/')) {
       return AssetImage(imagePath);
     } else {
       return FileImage(File(imagePath));
@@ -48,7 +48,7 @@ class _ListeManagementPageState extends State<ListeManagementPage> {
   }
 
   Widget _buildImageWidget(String imagePath) {
-    if (imagePath.startsWith('assets/')) {
+    if (imagePath.startsWith('images/')) {
       return Image.asset(
         imagePath,
         fit: BoxFit.cover,

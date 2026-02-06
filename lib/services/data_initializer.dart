@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:myapp/models/models.dart';
 import 'package:myapp/services/hive_service.dart';
@@ -72,7 +73,7 @@ class DataInitializer {
         ..motsIds = [];
 
       final liste6 = Liste()
-        ..nom = 'Les mots de l\'école'
+        ..nom = 'Les mots de l\\\'école'
         ..image = 'assets/images/default.png'
         ..niveauId = niveauGrand.id
         ..motsIds = [];

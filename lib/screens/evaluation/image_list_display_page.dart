@@ -144,7 +144,7 @@ class _ImageListDisplayPageState extends State<ImageListDisplayPage> {
                           child: Padding(
                             padding: const EdgeInsets.all(16.0),
                             child: Image.asset(
-                              'assets/images/${_shuffledMots[_currentIndex].image}',
+                              _shuffledMots[_currentIndex].image,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) =>
                                   const Center(

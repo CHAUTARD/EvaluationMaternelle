@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:myapp/providers/theme_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/screens/admin/eleve_management_page.dart';
+import 'package:myapp/screens/admin/import_students_page.dart';
 import 'package:myapp/screens/admin/niveau_management_page.dart';
 import 'package:myapp/screens/admin/liste_management_page.dart';
 import 'package:myapp/screens/admin/historique_page.dart';
@@ -60,6 +61,18 @@ class SettingsPage extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                     builder: (context) => const EleveManagementPage()),
+              );
+            },
+          ),
+          _buildAdminMenuItem(
+            context,
+            icon: Icons.upload_file_rounded,
+            title: 'Importer des Élèves',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const ImportStudentsPage()),
               );
             },
           ),

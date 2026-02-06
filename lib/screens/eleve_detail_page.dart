@@ -56,16 +56,6 @@ class _EleveDetailPageState extends State<EleveDetailPage> {
     return '';
   }
 
-  String _getImagePath(String? imageName) {
-    if (imageName == null || imageName.isEmpty) {
-      return 'assets/images/default.png';
-    }
-    if (imageName.startsWith('assets/')) {
-      return imageName;
-    }
-    return 'assets/images/$imageName';
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -91,9 +81,7 @@ class _EleveDetailPageState extends State<EleveDetailPage> {
                       child: ListTile(
                         leading: CircleAvatar(
                           // Assurez-vous que le chemin est correct.
-                          backgroundImage: AssetImage(
-                            _getImagePath(activite.image),
-                          ),
+                          backgroundImage: AssetImage(activite.image),
                         ),
                         title: Text(
                           activite.nom,
