@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:myapp/screens/admin/take_photo_screen.dart';
+import 'package:myapp/widgets/debug_page_identifier.dart';
 
 class ImagePickerScreen extends StatefulWidget {
   const ImagePickerScreen({super.key});
@@ -70,45 +71,50 @@ class _ImagePickerScreenState extends State<ImagePickerScreen> {
       appBar: AppBar(
         title: const Text('Sélectionner une image'),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _imagePaths.isEmpty
-              ? const Center(child: Text("Aucune image trouvée dans assets/images."))
-              : GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 4,
-                    mainAxisSpacing: 4,
-                  ),
-                  itemCount: _imagePaths.length,
-                  itemBuilder: (context, index) {
-                    final imagePath = _imagePaths[index];
-                    final imageName = imagePath.split('/').last;
-                    return GestureDetector(
-                      onTap: () {
-                        // This is synchronous, so it's safe.
-                        Navigator.pop(context, imagePath);
-                      },
-                      child: Card(
-                        clipBehavior: Clip.antiAlias,
-                        child: GridTile(
-                          footer: GridTileBar(
-                            backgroundColor: Colors.black45,
-                            title: Text(
-                              imageName,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(fontSize: 10),
+      body: Stack(
+        children: [
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _imagePaths.isEmpty
+                  ? const Center(child: Text("Aucune image trouvée dans assets/images."))
+                  : GridView.builder(
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        crossAxisSpacing: 4,
+                        mainAxisSpacing: 4,
+                      ),
+                      itemCount: _imagePaths.length,
+                      itemBuilder: (context, index) {
+                        final imagePath = _imagePaths[index];
+                        final imageName = imagePath.split('/').last;
+                        return GestureDetector(
+                          onTap: () {
+                            // This is synchronous, so it's safe.
+                            Navigator.pop(context, imagePath);
+                          },
+                          child: Card(
+                            clipBehavior: Clip.antiAlias,
+                            child: GridTile(
+                              footer: GridTileBar(
+                                backgroundColor: Colors.black45,
+                                title: Text(
+                                  imageName,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(fontSize: 10),
+                                ),
+                              ),
+                              child: Image.asset(
+                                imagePath,
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
-                          child: Image.asset(
-                            imagePath,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
+                        );
+                      },
+                    ),
+          const DebugPageIdentifier(pageName: 'ImagePickerScreen'),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: _navigateAndPickImage, // Call the safe async method.
         child: const Icon(Icons.camera_alt),

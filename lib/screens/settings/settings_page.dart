@@ -1,7 +1,7 @@
-
+// setting_page.dart
 import 'package:flutter/material.dart';
+import 'package:myapp/providers/theme_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:myapp/main.dart';
 import 'package:myapp/screens/admin/admin_page.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -12,9 +12,7 @@ class SettingsPage extends StatelessWidget {
     final themeProvider = Provider.of<ThemeProvider>(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Paramètres'),
-      ),
+      appBar: AppBar(title: const Text('Paramètres')),
       body: ListView(
         children: [
           ListTile(
@@ -47,9 +45,7 @@ class SettingsPage extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const AdminPage(),
-                ),
+                MaterialPageRoute(builder: (context) => const AdminPage()),
               );
             },
           ),
@@ -58,4 +54,3 @@ class SettingsPage extends StatelessWidget {
     );
   }
 }
-

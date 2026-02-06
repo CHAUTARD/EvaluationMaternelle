@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:myapp/models/models.dart';
 import 'package:myapp/services/hive_service.dart';
+import 'package:myapp/widgets/debug_page_identifier.dart';
 import 'package:uuid/uuid.dart';
 
 class EleveManagementPage extends StatefulWidget {
@@ -114,36 +115,41 @@ class _EleveManagementPageState extends State<EleveManagementPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Gestion des Élèves')),
-      body: ValueListenableBuilder(
-        valueListenable: HiveService.eleves.listenable(),
-        builder: (context, Box<Eleve> box, _) {
-          final eleves = box.values.toList()
-            ..sort((a, b) => a.nom.compareTo(b.nom));
-          return ListView.builder(
-            itemCount: eleves.length,
-            itemBuilder: (context, index) {
-              final eleve = eleves[index];
-              final niveau = HiveService.niveaux.get(eleve.niveauId);
-              return ListTile(
-                title: Text(eleve.nom),
-                subtitle: Text('Niveau: ${niveau?.nom ?? "N/A"}'),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () => _showFormDialog(eleve: eleve),
+      body: Stack(
+        children: [
+          ValueListenableBuilder(
+            valueListenable: HiveService.eleves.listenable(),
+            builder: (context, Box<Eleve> box, _) {
+              final eleves = box.values.toList()
+                ..sort((a, b) => a.nom.compareTo(b.nom));
+              return ListView.builder(
+                itemCount: eleves.length,
+                itemBuilder: (context, index) {
+                  final eleve = eleves[index];
+                  final niveau = HiveService.niveaux.get(eleve.niveauId);
+                  return ListTile(
+                    title: Text(eleve.nom),
+                    subtitle: Text('Niveau: ${niveau?.nom ?? "N/A"}'),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit),
+                          onPressed: () => _showFormDialog(eleve: eleve),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete),
+                          onPressed: () => _deleteEleve(eleve.id),
+                        ),
+                      ],
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () => _deleteEleve(eleve.id),
-                    ),
-                  ],
-                ),
+                  );
+                },
               );
             },
-          );
-        },
+          ),
+          const DebugPageIdentifier(pageName: 'EleveManagementPage'),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showFormDialog(),

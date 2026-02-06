@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:myapp/widgets/debug_page_identifier.dart';
 import 'eleve_management_page.dart';
 import 'historique_page.dart';
 import 'liste_management_page.dart';
@@ -14,67 +15,72 @@ class AdminPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Admin Dashboard'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: GridView.count(
-          crossAxisCount: 2,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          children: [
-            _buildDashboardItem(
-              context,
-              icon: Icons.people_alt_rounded,
-              label: 'Élèves',
-              onTap: () {
-                Navigator.push(
+      body: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: GridView.count(
+              crossAxisCount: 2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              children: [
+                _buildDashboardItem(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const EleveManagementPage(),
-                  ),
-                );
-              },
-            ),
-            _buildDashboardItem(
-              context,
-              icon: Icons.layers_rounded,
-              label: 'Niveaux',
-              onTap: () {
-                Navigator.push(
+                  icon: Icons.people_alt_rounded,
+                  label: 'Élèves',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const EleveManagementPage(),
+                      ),
+                    );
+                  },
+                ),
+                _buildDashboardItem(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const NiveauManagementPage(),
-                  ),
-                );
-              },
-            ),
-            _buildDashboardItem(
-              context,
-              icon: Icons.list_alt_rounded,
-              label: 'Listes',
-              onTap: () {
-                Navigator.push(
+                  icon: Icons.layers_rounded,
+                  label: 'Niveaux',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const NiveauManagementPage(),
+                      ),
+                    );
+                  },
+                ),
+                _buildDashboardItem(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const ListeManagementPage(),
-                  ),
-                );
-              },
-            ),
-            _buildDashboardItem(
-              context,
-              icon: Icons.history_edu_rounded,
-              label: 'Historique',
-              onTap: () {
-                Navigator.push(
+                  icon: Icons.list_alt_rounded,
+                  label: 'Listes',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ListeManagementPage(),
+                      ),
+                    );
+                  },
+                ),
+                _buildDashboardItem(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const HistoriquePage(),
-                  ),
-                );
-              },
+                  icon: Icons.history_edu_rounded,
+                  label: 'Historique',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const HistoriquePage(),
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+          const DebugPageIdentifier(pageName: 'AdminPage'),
+        ],
       ),
     );
   }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:myapp/widgets/debug_page_identifier.dart';
 
 class ImageManagementPage extends StatefulWidget {
   const ImageManagementPage({super.key});
@@ -134,75 +135,80 @@ class _ImageManagementPageState extends State<ImageManagementPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Gestion des Images")),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _imageRefs.isEmpty
-              ? const Center(
-                  child: Text(
-                      "Aucune image trouvée. Appuyez sur '+' pour commencer.",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                )
-              : Column(
-                children: [
-                  if (_uploadProgress != null)
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: LinearProgressIndicator(value: _uploadProgress, minHeight: 10,),
-                    ),
-                  Expanded(
-                    child: GridView.builder(
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          crossAxisSpacing: 4,
-                          mainAxisSpacing: 4,
-                        ),
-                        itemCount: _imageRefs.length,
-                        padding: const EdgeInsets.all(4),
-                        itemBuilder: (context, index) {
-                          final imageMap = _imageRefs[index];
-                          final ref = imageMap['ref'] as Reference;
-                          final url = imageMap['url'] as String;
-
-                          return GridTile(
-                            header: Container(
-                              color: Colors.black54,
-                              padding: const EdgeInsets.symmetric(horizontal: 4),
-                              child: Text(
-                                ref.name,
-                                style: const TextStyle(color: Colors.white, fontSize: 10),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            footer: GridTileBar(
-                              backgroundColor: Colors.black54,
-                              leading: IconButton(
-                                icon: const Icon(Icons.copy, size: 18),
-                                onPressed: () => _copyUrlToClipboard(url),
-                                tooltip: "Copier l'URL",
-                              ),
-                              trailing: IconButton(
-                                icon: const Icon(Icons.delete, size: 18, color: Colors.redAccent,),
-                                onPressed: () => _deleteImage(ref),
-                                tooltip: "Supprimer",
-                              ),
-                            ),
-                            child: Image.network(
-                              url,
-                              fit: BoxFit.cover,
-                              loadingBuilder: (context, child, progress) {
-                                return progress == null
-                                    ? child
-                                    : const Center(child: CircularProgressIndicator());
-                              },
-                            ),
-                          );
-                        },
+      body: Stack(
+        children: [
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _imageRefs.isEmpty
+                  ? const Center(
+                      child: Text(
+                          "Aucune image trouvée. Appuyez sur '+' pour commencer.",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 16, color: Colors.grey),
                       ),
+                    )
+                  : Column(
+                    children: [
+                      if (_uploadProgress != null)
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: LinearProgressIndicator(value: _uploadProgress, minHeight: 10,),
+                        ),
+                      Expanded(
+                        child: GridView.builder(
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              crossAxisSpacing: 4,
+                              mainAxisSpacing: 4,
+                            ),
+                            itemCount: _imageRefs.length,
+                            padding: const EdgeInsets.all(4),
+                            itemBuilder: (context, index) {
+                              final imageMap = _imageRefs[index];
+                              final ref = imageMap['ref'] as Reference;
+                              final url = imageMap['url'] as String;
+
+                              return GridTile(
+                                header: Container(
+                                  color: Colors.black54,
+                                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                                  child: Text(
+                                    ref.name,
+                                    style: const TextStyle(color: Colors.white, fontSize: 10),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                footer: GridTileBar(
+                                  backgroundColor: Colors.black54,
+                                  leading: IconButton(
+                                    icon: const Icon(Icons.copy, size: 18),
+                                    onPressed: () => _copyUrlToClipboard(url),
+                                    tooltip: "Copier l'URL",
+                                  ),
+                                  trailing: IconButton(
+                                    icon: const Icon(Icons.delete, size: 18, color: Colors.redAccent,),
+                                    onPressed: () => _deleteImage(ref),
+                                    tooltip: "Supprimer",
+                                  ),
+                                ),
+                                child: Image.network(
+                                  url,
+                                  fit: BoxFit.cover,
+                                  loadingBuilder: (context, child, progress) {
+                                    return progress == null
+                                        ? child
+                                        : const Center(child: CircularProgressIndicator());
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+          const DebugPageIdentifier(pageName: 'ImageManagementPage'),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: _uploadImage,
         tooltip: 'Ajouter une image',

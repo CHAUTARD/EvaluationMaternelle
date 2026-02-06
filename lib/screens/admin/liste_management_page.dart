@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:myapp/models/models.dart';
 import 'package:myapp/services/hive_service.dart';
+import 'package:myapp/widgets/debug_page_identifier.dart';
 import './image_picker_screen.dart';
 import './mot_management_page.dart';
 
@@ -229,62 +230,67 @@ class _ListeManagementPageState extends State<ListeManagementPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Gestion des Listes')),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : ValueListenableBuilder(
-              valueListenable: _listesBox.listenable(),
-              builder: (context, Box<Liste> box, _) {
-                final listes = box.values.toList()
-                  ..sort((a, b) => a.nom.compareTo(b.nom));
-                return ListView.builder(
-                  itemCount: listes.length,
-                  itemBuilder: (context, index) {
-                    final liste = listes[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundImage: _buildImageProvider(liste.image),
-                        ),
-                        title: Text(liste.nom),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(
-                                Icons.edit_note,
-                                color: Colors.purple,
-                              ),
-                              tooltip: 'Gérer le contenu',
-                              onPressed: () => _navigateToMotManagement(liste),
+      body: Stack(
+        children: [
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : ValueListenableBuilder(
+                  valueListenable: _listesBox.listenable(),
+                  builder: (context, Box<Liste> box, _) {
+                    final listes = box.values.toList()
+                      ..sort((a, b) => a.nom.compareTo(b.nom));
+                    return ListView.builder(
+                      itemCount: listes.length,
+                      itemBuilder: (context, index) {
+                        final liste = listes[index];
+                        return Card(
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundImage: _buildImageProvider(liste.image),
                             ),
-                            IconButton(
-                              icon: const Icon(
-                                Icons.edit,
-                                color: Colors.blueAccent,
-                              ),
-                              tooltip: 'Modifier la liste',
-                              onPressed: () => _showFormDialog(liste: liste),
+                            title: Text(liste.nom),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.edit_note,
+                                    color: Colors.purple,
+                                  ),
+                                  tooltip: 'Gérer le contenu',
+                                  onPressed: () => _navigateToMotManagement(liste),
+                                ),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.edit,
+                                    color: Colors.blueAccent,
+                                  ),
+                                  tooltip: 'Modifier la liste',
+                                  onPressed: () => _showFormDialog(liste: liste),
+                                ),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.delete_outline,
+                                    color: Colors.redAccent,
+                                  ),
+                                  tooltip: 'Supprimer la liste',
+                                  onPressed: () => _deleteListe(liste),
+                                ),
+                              ],
                             ),
-                            IconButton(
-                              icon: const Icon(
-                                Icons.delete_outline,
-                                color: Colors.redAccent,
-                              ),
-                              tooltip: 'Supprimer la liste',
-                              onPressed: () => _deleteListe(liste),
-                            ),
-                          ],
-                        ),
-                      ),
+                          ),
+                        );
+                      },
                     );
                   },
-                );
-              },
-            ),
+                ),
+          const DebugPageIdentifier(pageName: 'ListeManagementPage'),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showFormDialog(),
         tooltip: 'Ajouter une nouvelle liste',

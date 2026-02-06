@@ -1,9 +1,10 @@
-
+// niveau_management_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:myapp/models/models.dart';
 import 'package:myapp/services/hive_service.dart';
+import 'package:myapp/widgets/debug_page_identifier.dart';
 import 'package:uuid/uuid.dart';
 import './niveau_liste_page.dart';
 
@@ -33,7 +34,9 @@ class _NiveauManagementPageState extends State<NiveauManagementPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text(niveau == null ? 'Ajouter un niveau' : 'Modifier le niveau'),
+          title: Text(
+            niveau == null ? 'Ajouter un niveau' : 'Modifier le niveau',
+          ),
           content: SingleChildScrollView(
             child: Form(
               key: formKey,
@@ -42,7 +45,9 @@ class _NiveauManagementPageState extends State<NiveauManagementPage> {
                 children: [
                   TextFormField(
                     initialValue: nom,
-                    decoration: const InputDecoration(labelText: 'Nom du niveau'),
+                    decoration: const InputDecoration(
+                      labelText: 'Nom du niveau',
+                    ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
                         return 'Le nom est requis.';
@@ -120,12 +125,16 @@ class _NiveauManagementPageState extends State<NiveauManagementPage> {
 
   void _deleteNiveau(Niveau niveau) {
     // First, check if any Eleve is associated with this Niveau
-    final isNiveauInUse = HiveService.eleves.values.any((eleve) => eleve.niveauId == niveau.id);
+    final isNiveauInUse = HiveService.eleves.values.any(
+      (eleve) => eleve.niveauId == niveau.id,
+    );
 
     if (isNiveauInUse) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Impossible de supprimer ce niveau car il est utilisé par un ou plusieurs élèves.'),
+          content: Text(
+            'Impossible de supprimer ce niveau car il est utilisé par un ou plusieurs élèves.',
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -135,7 +144,9 @@ class _NiveauManagementPageState extends State<NiveauManagementPage> {
         builder: (BuildContext context) {
           return AlertDialog(
             title: const Text('Confirmer la suppression'),
-            content: const Text('Êtes-vous sûr de vouloir supprimer ce niveau ?'),
+            content: const Text(
+              'Êtes-vous sûr de vouloir supprimer ce niveau ?',
+            ),
             actions: <Widget>[
               TextButton(
                 child: const Text('Annuler'),
@@ -144,7 +155,10 @@ class _NiveauManagementPageState extends State<NiveauManagementPage> {
                 },
               ),
               TextButton(
-                child: const Text('Supprimer', style: TextStyle(color: Colors.red)),
+                child: const Text(
+                  'Supprimer',
+                  style: TextStyle(color: Colors.red),
+                ),
                 onPressed: () {
                   niveau.delete();
                   Navigator.of(context).pop();
@@ -156,7 +170,7 @@ class _NiveauManagementPageState extends State<NiveauManagementPage> {
       );
     }
   }
-  
+
   void _navigateToNiveauListe(Niveau niveau) {
     Navigator.push(
       context,
@@ -168,55 +182,61 @@ class _NiveauManagementPageState extends State<NiveauManagementPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Gestion des Niveaux')),
-      body: ValueListenableBuilder(
-        valueListenable: HiveService.niveaux.listenable(),
-        builder: (context, Box<Niveau> box, _) {
-          final niveaux = box.values.toList()..sort((a, b) => a.ordre.compareTo(b.ordre));
-          return ReorderableListView.builder(
-            itemCount: niveaux.length,
-            itemBuilder: (context, index) {
-              final niveau = niveaux[index];
-              return ListTile(
-                key: ValueKey(niveau.id),
-                leading: CircleAvatar(
-                  backgroundColor: Color(niveau.couleur),
-                  child: Text(niveau.nom.substring(0, 1)),
-                ),
-                title: Text(niveau.nom),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                     IconButton(
-                      icon: const Icon(Icons.list),
-                      onPressed: () => _navigateToNiveauListe(niveau),
+      body: Stack(
+        children: [
+          ValueListenableBuilder(
+            valueListenable: HiveService.niveaux.listenable(),
+            builder: (context, Box<Niveau> box, _) {
+              final niveaux = box.values.toList()
+                ..sort((a, b) => a.ordre.compareTo(b.ordre));
+              return ReorderableListView.builder(
+                itemCount: niveaux.length,
+                itemBuilder: (context, index) {
+                  final niveau = niveaux[index];
+                  return ListTile(
+                    key: ValueKey(niveau.id),
+                    leading: CircleAvatar(
+                      backgroundColor: Color(niveau.couleur),
+                      child: Text(niveau.nom.substring(0, 1)),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () => _showFormDialog(niveau: niveau),
+                    title: Text(niveau.nom),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.list),
+                          onPressed: () => _navigateToNiveauListe(niveau),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.edit),
+                          onPressed: () => _showFormDialog(niveau: niveau),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete),
+                          onPressed: () => _deleteNiveau(niveau),
+                        ),
+                      ],
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () => _deleteNiveau(niveau),
-                    ),
-                  ],
-                ),
+                  );
+                },
+                onReorder: (oldIndex, newIndex) {
+                  if (oldIndex < newIndex) {
+                    newIndex -= 1;
+                  }
+                  final item = niveaux.removeAt(oldIndex);
+                  niveaux.insert(newIndex, item);
+                  // Update order in database
+                  for (int i = 0; i < niveaux.length; i++) {
+                    final niveau = niveaux[i];
+                    niveau.ordre = i;
+                    niveau.save();
+                  }
+                },
               );
             },
-            onReorder: (oldIndex, newIndex) {
-              if (oldIndex < newIndex) {
-                newIndex -= 1;
-              }
-              final item = niveaux.removeAt(oldIndex);
-              niveaux.insert(newIndex, item);
-              // Update order in database
-              for (int i = 0; i < niveaux.length; i++) {
-                final niveau = niveaux[i];
-                niveau.ordre = i;
-                niveau.save();
-              }
-            },
-          );
-        },
+          ),
+          const DebugPageIdentifier(pageName: 'NiveauManagementPage'),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showFormDialog(),

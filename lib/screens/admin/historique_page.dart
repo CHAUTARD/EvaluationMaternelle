@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:myapp/widgets/debug_page_identifier.dart';
 import '../../models/models.dart';
 import '../../services/hive_service.dart';
 
@@ -40,10 +41,15 @@ class _HistoriquePageState extends State<HistoriquePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Historique des sessions')),
-      body: Column(
+      body: Stack(
         children: [
-          _buildFilterDropdown(),
-          Expanded(child: _buildHistoriqueList()),
+          Column(
+            children: [
+              _buildFilterDropdown(),
+              Expanded(child: _buildHistoriqueList()),
+            ],
+          ),
+          const DebugPageIdentifier(pageName: 'HistoriquePage'),
         ],
       ),
     );

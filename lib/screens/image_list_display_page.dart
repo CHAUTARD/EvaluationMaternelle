@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:myapp/services/hive_service.dart';
+import 'package:myapp/widgets/debug_page_identifier.dart';
 import '../models/models.dart';
 
 class ImageListDisplayPage extends StatefulWidget {
@@ -45,63 +46,68 @@ class _ImageListDisplayPageState extends State<ImageListDisplayPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(widget.liste.nom)),
-      body: FutureBuilder<List<Mot>>(
-        future: _motsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text("Erreur: ${snapshot.error}"));
-          }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text("Aucun mot ou image à afficher."));
-          }
+      body: Stack(
+        children: [
+          FutureBuilder<List<Mot>>(
+            future: _motsFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return Center(child: Text("Erreur: ${snapshot.error}"));
+              }
+              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return const Center(child: Text("Aucun mot ou image à afficher."));
+              }
 
-          final mots = snapshot.data!;
+              final mots = snapshot.data!;
 
-          return GridView.builder(
-            padding: const EdgeInsets.all(8.0),
-            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 200, // Largeur maximale de chaque tuile
-              childAspectRatio: 3 / 3.5, // Ratio pour l'apparence des tuiles
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-            ),
-            itemCount: mots.length,
-            itemBuilder: (context, index) {
-              final mot = mots[index];
-              return Card(
-                elevation: 4,
-                clipBehavior: Clip.antiAlias,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      child: (mot.image.isNotEmpty)
-                          ? CachedNetworkImage(
-                              imageUrl: mot.image,
-                              fit: BoxFit.cover,
-                              placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
-                              errorWidget: (context, url, error) => const Icon(Icons.broken_image, size: 50),
-                            )
-                          : const Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        mot.word,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                      ),
-                    ),
-                  ],
+              return GridView.builder(
+                padding: const EdgeInsets.all(8.0),
+                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 200, // Largeur maximale de chaque tuile
+                  childAspectRatio: 3 / 3.5, // Ratio pour l'apparence des tuiles
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
                 ),
+                itemCount: mots.length,
+                itemBuilder: (context, index) {
+                  final mot = mots[index];
+                  return Card(
+                    elevation: 4,
+                    clipBehavior: Clip.antiAlias,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          child: (mot.image.isNotEmpty)
+                              ? CachedNetworkImage(
+                                  imageUrl: mot.image,
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
+                                  errorWidget: (context, url, error) => const Icon(Icons.broken_image, size: 50),
+                                )
+                              : const Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            mot.word,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               );
             },
-          );
-        },
+          ),
+          const DebugPageIdentifier(pageName: 'ImageListDisplayPage'),
+        ],
       ),
     );
   }

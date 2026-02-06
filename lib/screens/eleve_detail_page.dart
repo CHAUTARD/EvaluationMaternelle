@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/models/models.dart';
 import 'package:myapp/services/hive_service.dart';
+import 'package:myapp/widgets/debug_page_identifier.dart';
 import 'evaluation/word_display_page.dart';
 import 'evaluation/image_list_display_page.dart';
 
@@ -53,57 +54,62 @@ class _EleveDetailPageState extends State<EleveDetailPage> {
         // Vous pouvez ajouter une CircleAvatar ici si vous le souhaitez
         // leading: CircleAvatar(backgroundImage: AssetImage('assets/images/${widget.eleve.avatar}')),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _activites.isEmpty
-              ? const Center(
-                  child: Text('Aucune activité trouvée pour ce niveau.'),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(8.0),
-                  itemCount: _activites.length,
-                  itemBuilder: (context, index) {
-                    final activite = _activites[index];
-                    // On vérifie si la liste de mots est vide pour déterminer le type d'activité.
-                    final isImageList = (activite.motsIds).isEmpty;
+      body: Stack(
+        children: [
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _activites.isEmpty
+                  ? const Center(
+                      child: Text('Aucune activité trouvée pour ce niveau.'),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(8.0),
+                      itemCount: _activites.length,
+                      itemBuilder: (context, index) {
+                        final activite = _activites[index];
+                        // On vérifie si la liste de mots est vide pour déterminer le type d'activité.
+                        final isImageList = (activite.motsIds).isEmpty;
 
-                    return Card(
-                      margin: const EdgeInsets.symmetric(vertical: 6.0),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          // Assurez-vous que le chemin est correct.
-                          backgroundImage:
-                              AssetImage('assets/images/${activite.image}'),
-                        ),
-                        title: Text(activite.nom, style: const TextStyle(fontWeight: FontWeight.bold)),
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 18),
-                        onTap: () {
-                          if (isImageList) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ImageListDisplayPage(
-                                  liste: activite,
-                                  eleve: widget.eleve,
-                                ),
-                              ),
-                            );
-                          } else {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => WordDisplayPage(
-                                  liste: activite,
-                                  eleve: widget.eleve,
-                                ),
-                              ),
-                            );
-                          }
-                        },
-                      ),
-                    );
-                  },
-                ),
+                        return Card(
+                          margin: const EdgeInsets.symmetric(vertical: 6.0),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              // Assurez-vous que le chemin est correct.
+                              backgroundImage:
+                                  AssetImage('assets/images/${activite.image}'),
+                            ),
+                            title: Text(activite.nom, style: const TextStyle(fontWeight: FontWeight.bold)),
+                            trailing: const Icon(Icons.arrow_forward_ios, size: 18),
+                            onTap: () {
+                              if (isImageList) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ImageListDisplayPage(
+                                      liste: activite,
+                                      eleve: widget.eleve,
+                                    ),
+                                  ),
+                                );
+                              } else {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => WordDisplayPage(
+                                      liste: activite,
+                                      eleve: widget.eleve,
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        );
+                      },
+                    ),
+          const DebugPageIdentifier(pageName: 'EleveDetailPage'),
+        ],
+      ),
     );
   }
 }
